@@ -21,10 +21,22 @@ sources:
     segment: Br
     time_scale: TAI # T_REC is TAI; convert with astropy Time(..., scale="tai").utc
     jsoc_email_env: JSOC_EMAIL # loaded from untracked .env
+    # All keys checked 2026-10-06 against drms Client().info("hmi.sharp_cea_720s").keywords.
     keys:
-      ids:
-        [HARPNUM, T_REC, NOAA_AR, NOAA_NUM, NOAA_ARS, LON_FWT, LAT_FWT, QUALITY]
-      # TODO: confirm against the series' keyword list
+      ids: [
+          HARPNUM,
+          T_REC,
+          NOAA_AR,
+          NOAA_NUM,
+          NOAA_ARS,
+          LON_FWT,
+          LAT_FWT,
+          LAT_MIN, # bounding box (Stonyhurst deg), for location attribution in step 3
+          LAT_MAX,
+          LON_MIN,
+          LON_MAX,
+          QUALITY,
+        ]
       summary:
         [
           USFLUX,
@@ -46,6 +58,9 @@ sources:
           R_VALUE,
           AREA_ACR,
         ]
+    keyword_cadence: null # null = every record (12 min); fallback "1h" adds @1h to the T_REC range
+    jsoc_timeout_s: 600 # socket timeout for one keyword query
+    max_query_days: 8 # JSOC rs_list fails (status 6) on a full month, e.g. 2011-03; months are split into <= 8-day queries
   goes_sci:
     url: "https://www.ncei.noaa.gov/data/goes-space-environment-monitor/access/science/xrs/goes15/xrsf-l2-flsum_science/sci_xrsf-l2-flsum_g15_y{year}_v2-3-0.nc"
     years: [2010, 2020] # available range, inclusive

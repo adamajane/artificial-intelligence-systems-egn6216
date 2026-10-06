@@ -9,6 +9,7 @@ public). Writes use Application Default Credentials from
 from __future__ import annotations
 
 import base64
+import fcntl
 import hashlib
 import json
 import logging
@@ -164,6 +165,10 @@ def upload(
     for p in files:
         rel = p.relative_to(data_root()).as_posix()
         key = f"{bucket()}/{rel}"
+        if key in remote and p.name == RETRIEVAL_LOG and remote[key] != _md5_b64(p):
+            # A shared log: add the bucket's entries first, so another step's uploads are never lost.
+            with fs.open(key, "rb") as f:
+                merge_log(p, json.load(f))
         if key in remote:
             if remote[key] == _md5_b64(p):
                 stats["skipped"] += 1
@@ -183,21 +188,41 @@ def upload(
 RETRIEVAL_LOG = "retrieval_log.json"
 
 
-def record_retrieval(log_rel: str, rel: str, url: str) -> None:
-    """Add a source-download entry (URL, UTC time, size, sha256) to a JSON log.
+def utc_now() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    Existing entries are never changed, so the first retrieval date is kept.
+
+def merge_log(log_path: Path, other: dict) -> int:
+    """Add entries from ``other`` that the local log lacks (local entries win). Returns how many were added."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(log_path.with_name(f".{log_path.name}.lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        entries = json.loads(log_path.read_text()) if log_path.exists() else {}
+        added = {k: v for k, v in other.items() if k not in entries}
+        if added:
+            text = json.dumps(dict(sorted((entries | added).items())), indent=1) + "\n"
+            _atomic_write(log_path, [text.encode()])
+    return len(added)
+
+
+def record_retrieval(log_rel: str, rel: str, url: str | None = None, **extra) -> None:
+    """Add a source-download entry to a JSON log: URL or query, UTC time, size, sha256.
+
+    ``extra`` adds fields (e.g. a JSOC query string and row count) and may
+    override ``retrieved_utc``. Existing entries are never changed, so the first
+    retrieval date is kept.
     """
     log_path = local_path(log_rel)
-    entries = json.loads(log_path.read_text()) if log_path.exists() else {}
-    if rel in entries:
-        return
-    p = local_path(rel)
-    entries[rel] = {
-        "url": url,
-        "retrieved_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "bytes": p.stat().st_size,
-        "sha256": sha256(p),
-    }
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.write_text(json.dumps(dict(sorted(entries.items())), indent=1) + "\n")
+    p = local_path(rel)
+    entry = {"url": url} if url is not None else {}
+    entry |= {"retrieved_utc": utc_now(), "bytes": p.stat().st_size, "sha256": sha256(p)} | extra
+    # The log can be shared by several pipeline processes: lock, re-read, then replace atomically.
+    with open(log_path.with_name(f".{log_path.name}.lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        entries = json.loads(log_path.read_text()) if log_path.exists() else {}
+        if rel in entries:
+            return
+        entries[rel] = entry
+        text = json.dumps(dict(sorted(entries.items())), indent=1) + "\n"
+        _atomic_write(log_path, [text.encode()])
