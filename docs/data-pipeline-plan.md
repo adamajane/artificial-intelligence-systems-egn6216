@@ -144,6 +144,36 @@ Where the full raw FITS set (20–85 GB) lives depends on where the full downloa
   - science vs. operational class for the X3.1 (expect ≈ 1.43×)
   - the X3.1 has no region in the operational list → the HARP 4698 windows before it should be flagged
 
+### Step 4 results: Br export and full-run projection (measured 2026-10-06)
+
+Pilot targets: all 139 rows / 9 HARPs of step 3's draft `processed/v1/pilot/observations.parquet` (26 positive; 104 negatives kept and flagged `has_unattributed_mx`, user decision). After step 3 switched to the nearest `QUALITY == 0` record, 33 T_RECs changed; only those 33 were exported again, and the shard and index follow the current file.
+
+- Export: drms `url` / `fits`, 5 requests of 35/35/35/34/33 records (`JSOC_20261006_001655`, `…_001903`, `…_001910`, `…_001913`, `…_002641`). Submit → ready: **74, 85, 64, 75, 83 s** (mean 76 s). Probe requests with 1–2 records took 55–90 s, so the wait is a fixed cost per request, not per record.
+- Download: 172 files, 147.7 MB in 89.5 s = **1.65 MB/s** (one connection, files in sequence; 1.3–2.6 MB/s per request). Mean file of the 139 current cutouts **0.87 MB** (0.13–2.15 MB).
+- Cutouts: original shapes 164×365 to 800×1496 px. `nan_fraction` > 0 in 2 of 139 files (max 4.2%). The plain 128×128 resize stretches non-square cutouts up to 4× (HARP 4678, 374×1496).
+- Processing (read FITS, count/fill NaN, anti-aliased resize, float16): **≈ 20 ms per file**.
+- JSOC export limits found (none of them is documented in drms):
+  - One pending export per user (status 7) → requests run strictly one after another.
+  - Comma-joined record sets pass a keyword query but fail in export processing (status 4).
+  - A record-set string of 4,080 chars failed with "Record-set specification is too long", and the failed request (`JSOC_20261006_001687`) then blocked every new export of the account for **≈ 60 min** (03:41 → 04:41). 1,389 chars worked.
+  - → One record set per request, `hmi.sharp_cea_720s[? (harpnum=H and t_rec=S) or … ?]{Br}` (S = T_REC in DRMS seconds since 1977.01.01 TAI), capped at 1,400 chars = 35 pairs, the largest size known to work.
+
+Projection for 2011–2017 (step 3 `observations.parquet` regenerated 07:44 with the `QUALITY == 0` slot rule: **36,365 observations**, 1,206 HARPs):
+
+| Part                                                       |      Hours |
+| ---------------------------------------------------------- | ---------: |
+| Export queue: 1,036 requests × 76 s                        |       21.9 |
+| Download: 20.9 GB at 1.65 MB/s                             |        3.5 |
+| Processing: 36,365 × 20 ms                                 |        0.2 |
+| **Total (requests and downloads in sequence, as piloted)** | **25.6 h** |
+
+- Raw FITS volume is scaled by bounding-box area: FITS bytes are proportional to cutout pixels (2,850 bytes per deg² of `LAT/LON_MIN/MAX` box in the pilot). The full period averages 0.66× the pilot's box area (October 2014 had unusually large regions), so ≈ 21 GB rather than the 31 GB the pilot's mean file size would give. That is the low end of section 7's 20–85 GB.
+- **Decision rule: 25.6 h > 24 h → Compute Engine VM** (26.1 h if the queue wait is scaled per record instead of per request).
+- The margin is under two hours, and the time is JSOC's per-request queue, which a VM does not shorten. What a VM adds is an unattended 26-h run and raw FITS next to the bucket (section 7). Two levers would bring the laptop under 24 h; neither is applied yet:
+  - Download request N's files while request N+1 queues (still one pending export): ≈ 22.1 h.
+  - A record-set cap of 2,040 chars (52 pairs, 710 requests): ≈ 18.7 h in sequence. Only worth trying if JSOC confirms the limit, because a too-long request blocks the account for about an hour.
+- Uncertainty: 5 queue-wait samples, taken between 03:30 and 07:50 EDT; JSOC load varies.
+
 ## 9. `playground.ipynb` outline
 
 0. Title, purpose, how to run

@@ -113,10 +113,26 @@ labels:
   max_unattributed_drop_fraction: 0.20 # only when the drop is on: stop before writing if it removes more of any split's negatives
 
 cutouts:
-  size: [128, 128]
+  size: [128, 128] # [rows, cols]; plain resize, aspect ratio not kept (original shape goes in index.parquet)
   dtype: float16
+  resample_order: 1 # skimage.transform.resize spline order (1 = bilinear)
+  anti_aliasing: true # Gaussian pre-filter when downsampling
+  nan_fill: 0.0 # NaN pixels set to this before resizing; nan_fraction is recorded first
+  export_method: url # queued drms export (url_quick usually skips the queue)
+  export_protocol: fits # full FITS headers; cutout shape is read from the header (plan 3.1)
+  # drms sends export requests as GET URLs. JSOC answered 414 at 10,008 URL-encoded chars of
+  # record set and accepted 7,200 (checked 2026-10-06). 6,500 holds 137 (HARPNUM, T_REC) pairs.
+  max_request_chars: 6500
+  # JSOC export processing has its own limit on the raw record-set string: 1,389 chars (35 pairs)
+  # exported, 4,080 failed with "Record-set specification is too long" (2026-10-06). A failed
+  # too-long request blocks every further export of the same email, so stay at the known-good size.
+  max_recordset_chars: 1400
+  export_poll_s: 10
+  export_timeout_s: 7200
+  laptop_max_hours: 24 # plan section 8: projected full run <= this -> laptop, otherwise Compute Engine VM
 
 pilot:
   start: "2014-10-20"
   end: "2014-10-27"
   harpnum: 4698 # AR 12192, X3.1 on 2014-10-24
+  preview_time: "2014-10-24T18:00:00Z" # preview cutouts: each HARP's row nearest this (last slot before the X3.1 peak at 21:41 UTC)
