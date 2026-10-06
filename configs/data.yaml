@@ -88,17 +88,29 @@ splits: # chronological; a HARP crossing a boundary goes to the earlier split
 sampling:
   slot_hours_utc: [0, 6, 12, 18]
   slot_tolerance_minutes: 60 # nearest record within +-60 min; never sample on exact clock times
+  # Prefer the nearest QUALITY == 0 record within the tolerance, else the nearest record (flagged).
+  # The 06:00/06:12/18:00/18:12 TAI records carry 0x00010400 every day in 2011-2015 (user decision 2026-10-06).
+  prefer_quality_zero: true
 
 filters:
   require_noaa_ar: true # keep NOAA_AR != 0
-  max_abs_lon_fwt_deg: 60
+  max_abs_lon_fwt_deg: 60 # a record with LON_FWT = MISSING (no active pixels) is dropped and counted
   quality_nonzero: flag # flag for now; drop decision later
 
+attribution: # flares without an ops NOAA region (plan section 4); methods a-d in order
+  missing_locations: [N00E00] # placeholder location in the ops list -> treat as missing
+  record_gap_minutes: 60 # c: a HARP's nearest record must lie within +-this of the flare peak
+  bbox_margin_deg: 2 # c: location inside LAT/LON_MIN/MAX +- margin (pilot: 51/51 region flares inside own box at 2 deg)
+  fwt_tolerance_deg: 10 # c: else nearest (LAT_FWT, LON_FWT) within this great-circle distance (pilot p95 9.1 deg)
+
 labels:
-  horizon_hours: 24 # flare peak in (t, t + 24 h]
-  positive_min_class: M1.0
+  horizon_hours: 24 # flare peak in (t, t + 24 h], t = T_REC in UTC
+  positive_min_class: M1.0 # science scale; also the class threshold of has_unattributed_mx
   ops_match_tolerance_minutes: 5 # sci peak <-> ops peak; tune and report unmatched
-  drop_unattributed_mx_from_negatives: true # v1 rule; counts are reported
+  # false (user decision 2026-10-06): flagged negatives stay in v1 with has_unattributed_mx = true;
+  # excluding them is a training-time filter. Counts per split are reported either way.
+  drop_unattributed_mx_from_negatives: false
+  max_unattributed_drop_fraction: 0.20 # only when the drop is on: stop before writing if it removes more of any split's negatives
 
 cutouts:
   size: [128, 128]
