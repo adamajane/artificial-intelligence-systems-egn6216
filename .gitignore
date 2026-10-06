@@ -14,3 +14,6 @@ __pycache__/
 # Local data mirrors the GCS bucket; never commit it
 data/*
 !data/.gitkeep
+
+# Personal notes and reports (not part of the project)
+notes/
