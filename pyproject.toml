@@ -12,6 +12,7 @@ dependencies = [
     "drms>=0.9.1",
     "gcsfs>=2026.10.0",
     "h5netcdf>=1.8.1",
+    "h5py>=3.16.0",
     "matplotlib>=3.11.2",
     "numpy>=2.5.3",
     "pandas>=3.0.6",

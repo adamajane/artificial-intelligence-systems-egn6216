@@ -109,6 +109,8 @@ grpcio-status==1.84.0
     # via google-api-core
 h5netcdf==1.8.1
     # via solarsentinel
+h5py==3.16.0
+    # via solarsentinel
 idna==3.20
     # via
     #   requests
@@ -178,6 +180,7 @@ numpy==2.5.3
     #   contourpy
     #   drms
     #   h5netcdf
+    #   h5py
     #   imageio
     #   matplotlib
     #   pandas

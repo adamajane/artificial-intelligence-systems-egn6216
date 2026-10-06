@@ -3,11 +3,12 @@
 
 storage:
   gcp_project: ai-systems-egn6216
-  bucket: solarsentinel_ai-systems-egn6216      # not a secret; public read, ADC write
-  local_root: data                               # mirrors the bucket layout exactly
+  bucket: solarsentinel_ai-systems-egn6216 # not a secret; public read, ADC write
+  local_root: data # mirrors the bucket layout exactly
   prefixes:
     goes_sci: raw/goes/sci_flare_summary
     goes_ops: raw/goes/ops_event_reports
+    goes_swpc: raw/goes/swpc_event_reports
     sharp_keywords: raw/jsoc/sharp_keywords
     sharp_br_pilot: raw/jsoc/sharp_cea_720s_Br/pilot
     interim: interim
@@ -18,44 +19,71 @@ sources:
   sharp:
     series: hmi.sharp_cea_720s
     segment: Br
-    time_scale: TAI                              # T_REC is TAI; convert with astropy Time(..., scale="tai").utc
-    jsoc_email_env: JSOC_EMAIL                   # loaded from untracked .env
+    time_scale: TAI # T_REC is TAI; convert with astropy Time(..., scale="tai").utc
+    jsoc_email_env: JSOC_EMAIL # loaded from untracked .env
     keys:
-      ids: [HARPNUM, T_REC, NOAA_AR, NOAA_NUM, NOAA_ARS, LON_FWT, LAT_FWT, QUALITY]
+      ids:
+        [HARPNUM, T_REC, NOAA_AR, NOAA_NUM, NOAA_ARS, LON_FWT, LAT_FWT, QUALITY]
       # TODO: confirm against the series' keyword list
-      summary: [USFLUX, MEANGAM, MEANGBT, MEANGBZ, MEANGBH, MEANJZD, TOTUSJZ, MEANALP, MEANJZH,
-                TOTUSJH, ABSNJZH, SAVNCPP, MEANPOT, TOTPOT, MEANSHR, SHRGT45, R_VALUE, AREA_ACR]
+      summary:
+        [
+          USFLUX,
+          MEANGAM,
+          MEANGBT,
+          MEANGBZ,
+          MEANGBH,
+          MEANJZD,
+          TOTUSJZ,
+          MEANALP,
+          MEANJZH,
+          TOTUSJH,
+          ABSNJZH,
+          SAVNCPP,
+          MEANPOT,
+          TOTPOT,
+          MEANSHR,
+          SHRGT45,
+          R_VALUE,
+          AREA_ACR,
+        ]
   goes_sci:
     url: "https://www.ncei.noaa.gov/data/goes-space-environment-monitor/access/science/xrs/goes15/xrsf-l2-flsum_science/sci_xrsf-l2-flsum_g15_y{year}_v2-3-0.nc"
-    years: [2010, 2020]                          # available range, inclusive
+    years: [2010, 2020] # available range, inclusive
     peak_status: EVENT_PEAK
   goes_ops:
-    url: "https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/goes-xrs-report_{year}.txt"
-    # TODO: check which years exist up to 2017; fall back to SWPC event lists if 2016-17 are missing
+    url: "https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/{filename}"
+    filename: "goes-xrs-report_{year}.txt"
+    filename_overrides: # checked 2026-10-06 against the directory listing
+      2015: goes-xrs-report_2015_modifiedreplacedmissingrows.txt # regular 2015 file lacks 2015-09-23..30 (64 rows)
+      2017: goes-xrs-report_2017-ytd.txt # no full-year file; year-to-date file ends 2017-06-28
+  goes_swpc: # fallback for days after the last NGDC ops date (2017 H2)
+    url: "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/solar_event_reports/{year}/{month:02d}/{date}events.txt"
+    region_offset: 10000 # SWPC lists 4-digit region numbers (2673 -> 12673)
+  scale_factor_ops_to_sci: 0.7 # ops fluxes = sci fluxes x 0.7 (SWPC scaling); sci ~ ops / 0.7
 
 period:
   start: "2011-01-01"
   end: "2017-12-31"
 
-splits:                                          # chronological; a HARP crossing a boundary goes to the earlier split
+splits: # chronological; a HARP crossing a boundary goes to the earlier split
   train: ["2011-01-01", "2014-12-31"]
   val: ["2015-01-01", "2015-12-31"]
   replay: ["2016-01-01", "2017-12-31"]
 
 sampling:
   slot_hours_utc: [0, 6, 12, 18]
-  slot_tolerance_minutes: 60                     # nearest record within +-60 min; never sample on exact clock times
+  slot_tolerance_minutes: 60 # nearest record within +-60 min; never sample on exact clock times
 
 filters:
-  require_noaa_ar: true                          # keep NOAA_AR != 0
+  require_noaa_ar: true # keep NOAA_AR != 0
   max_abs_lon_fwt_deg: 60
-  quality_nonzero: flag                          # flag for now; drop decision later
+  quality_nonzero: flag # flag for now; drop decision later
 
 labels:
-  horizon_hours: 24                              # flare peak in (t, t + 24 h]
+  horizon_hours: 24 # flare peak in (t, t + 24 h]
   positive_min_class: M1.0
-  ops_match_tolerance_minutes: 5                 # sci peak <-> ops peak; tune and report unmatched
-  drop_unattributed_mx_from_negatives: true      # v1 rule; counts are reported
+  ops_match_tolerance_minutes: 5 # sci peak <-> ops peak; tune and report unmatched
+  drop_unattributed_mx_from_negatives: true # v1 rule; counts are reported
 
 cutouts:
   size: [128, 128]
@@ -64,4 +92,4 @@ cutouts:
 pilot:
   start: "2014-10-20"
   end: "2014-10-27"
-  harpnum: 4698                                  # AR 12192, X3.1 on 2014-10-24
+  harpnum: 4698 # AR 12192, X3.1 on 2014-10-24
