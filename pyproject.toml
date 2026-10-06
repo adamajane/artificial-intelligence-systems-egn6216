@@ -1,5 +1,5 @@
 [project]
-name = "artificial-intelligence-systems-egn6216"
+name = "solarsentinel"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -7,10 +7,24 @@ authors = [
     { name = "adamajane", email = "adamajane@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "astropy>=8.0.1",
+    "drms>=0.9.1",
+    "gcsfs>=2026.10.0",
+    "h5netcdf>=1.8.1",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "pyarrow>=25.0.1",
+    "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+    "scikit-image>=0.26.0",
+    "xarray>=2026.9.0",
+]
 
 [project.scripts]
-artificial-intelligence-systems-egn6216 = "artificial_intelligence_systems_egn6216:main"
+solarsentinel = "solarsentinel:main"
 
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]
@@ -19,4 +33,5 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "ipykernel>=7.4.0",
+    "nbconvert>=7.17.1",
 ]

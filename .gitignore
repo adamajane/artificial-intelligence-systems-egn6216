@@ -1,2 +1,16 @@
 # macOS
-.DS_STORE
+.DS_Store
+
+# Python / uv
+.venv/
+__pycache__/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets (JSOC_EMAIL etc.)
+.env
+
+# Local data mirrors the GCS bucket; never commit it
+data/*
+!data/.gitkeep
