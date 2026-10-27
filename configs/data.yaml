@@ -11,6 +11,7 @@ storage:
     goes_swpc: raw/goes/swpc_event_reports
     sharp_keywords: raw/jsoc/sharp_keywords
     sharp_br_pilot: raw/jsoc/sharp_cea_720s_Br/pilot
+    sharp_br_full: raw/jsoc/sharp_cea_720s_Br/full # step-6 root; the fme subset downloads here, so the full run skips those files
     interim: interim
     processed: processed
   dataset_version: v1

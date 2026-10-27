@@ -1,0 +1,16 @@
+# SolarSentinel experiment settings (First Model Exploration, docs/2-model-experiment-plan.md).
+# Data rules stay in configs/data.yaml; this file holds seeds, subset sizes, recipes and model IDs.
+
+fme:
+  prefix: processed/v1/experiments/fme # targets.parquet, cutouts/ (shards + index.parquet)
+  targets:
+    seed: 42
+    # Strata (plan 0.3): VP/VN = val positives/negatives, TP/TN = train positives/negatives.
+    # Negatives are sampled from all negatives, has_unattributed_mx ones included.
+    # Tier 1 is interleaved in `pattern` (233 rounds = 1,398 targets): any prefix that finishes is a
+    # stratified sample with about 1:2 positives to negatives in both splits.
+    tier1: { VP: 233, VN: 466, TP: 233, TN: 466 }
+    pattern: [VP, VN, VN, TP, TN, TN]
+    # Tier 2, after tier 1, in case the download runs faster than expected: more train data, same 1:2.
+    tier2: { TP: 233, TN: 466 }
+    tier2_pattern: [TP, TN, TN]

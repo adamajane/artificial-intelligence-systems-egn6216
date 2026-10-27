@@ -1,9 +1,14 @@
 """SHARP Br cutouts (proposal C2/C4): export Br from JSOC, resample to 128x128 float16, shard per month.
 
 Targets are the (HARPNUM, T_REC) rows of step 3's observations table whose
-6-h slot falls in the window (``--pilot``: the pilot week in configs/data.yaml).
-The observations table is only read; images get a sidecar index so it stays
-unchanged while they arrive (plan section 7).
+6-h slot falls in the window (``--pilot``: the pilot week in configs/data.yaml),
+or a ready-made list (``--targets``: e.g. the First Model Exploration subset
+from ``solarsentinel.models.targets``). A list keeps its order through the
+export, so any prefix that finishes is a stratified sample; its FITS go to the
+step-6 root and its shards to ``<fme prefix>/cutouts``, so the pilot shards are
+never rewritten. ``--stop-at HH:MM`` (local time) starts no new export request
+after that time. The observations table is only read; images get a sidecar
+index so it stays unchanged while they arrive (plan section 7).
 
 1. Raw FITS at ``data/<pilot prefix>/<HARPNUM>/<YYYYMMDD_HHMMSS>_TAI.Br.fits``.
    Files that exist are skipped (resumable). The rest are exported with drms
@@ -31,6 +36,8 @@ projects the full 2011-2017 download from them and the observation count
 Run:
   uv run python -m solarsentinel.data.cutouts --pilot --dry-run      # batches + keyword check, no export
   uv run python -m solarsentinel.data.cutouts --pilot --preview data/pilot_cutouts_preview.png --upload
+  uv run python -m solarsentinel.data.cutouts --targets data/processed/v1/experiments/fme/targets.parquet --dry-run
+  uv run python -m solarsentinel.data.cutouts --targets data/processed/v1/experiments/fme/targets.parquet --stop-at HH:MM
 """
 
 from __future__ import annotations
@@ -57,7 +64,7 @@ from dotenv import find_dotenv, load_dotenv
 from skimage.transform import resize
 
 from solarsentinel import storage
-from solarsentinel.config import load_config, prefix
+from solarsentinel.config import load_config, load_experiments, prefix
 
 log = logging.getLogger(__name__)
 
@@ -124,6 +131,29 @@ def load_targets(path: Path, start: date, end: date) -> pd.DataFrame:
         raise ValueError(f"{path}: {dups} duplicate (HARPNUM, T_REC) rows in the window")
     df["shard"] = df.t_rec_utc.dt.strftime("%Y-%m")
     return df.sort_values(["T_REC", "HARPNUM"]).reset_index(drop=True)
+
+
+def load_target_list(path: Path) -> pd.DataFrame:
+    """A ready-made target list (HARPNUM, T_REC, shard, priority, ...), in priority order. The order is kept for the export."""
+    df = pd.read_parquet(path).astype({"HARPNUM": "int32", "T_REC": "string"})
+    missing = {"HARPNUM", "T_REC", "shard", "priority"} - set(df.columns)
+    if missing:
+        raise ValueError(f"{path}: missing columns {sorted(missing)}")
+    if df.duplicated(["HARPNUM", "T_REC"]).any():
+        raise ValueError(f"{path}: duplicate (HARPNUM, T_REC) rows")
+    if "split" in df.columns and (df.split == "replay").any():
+        raise ValueError(f"{path}: contains replay rows; the replay set is never downloaded for experiments")
+    return df.sort_values("priority").reset_index(drop=True)
+
+
+def stop_time(hhmm: str, now: datetime | None = None) -> datetime:
+    """Today's local HH:MM. A time already past is an error, not tomorrow (a stale value must not run all night)."""
+    now = now or datetime.now().astimezone()
+    h, m = (int(x) for x in hhmm.split(":"))
+    t = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    if t <= now:
+        raise SystemExit(f"--stop-at {hhmm} is already past ({now:%H:%M} local)")
+    return t
 
 
 # ---------------------------------------------------------------- JSOC export
@@ -298,8 +328,11 @@ def write_exports(root: str, entries: list[dict]) -> None:
     storage._atomic_write(p, [(json.dumps(entries, indent=1) + "\n").encode()])
 
 
-def fetch(targets: pd.DataFrame, root: str, *, dry_run: bool) -> dict:
-    """Make every target's FITS exist under data/<root>. Returns fetch stats."""
+def fetch(targets: pd.DataFrame, root: str, *, dry_run: bool, stop_at: datetime | None = None) -> dict:
+    """Make every target's FITS exist under data/<root>, batches in target order. Returns fetch stats.
+
+    With ``stop_at``, no new export request starts after that time; the one in flight finishes.
+    """
     have = np.array([storage.local_path(fits_rel(root, h, t)).exists() for h, t in zip(targets.HARPNUM, targets.T_REC)], dtype=bool)
     todo = targets[~have]
     groups = batch_pairs(list(zip(todo.HARPNUM.astype(int), todo.T_REC.astype(str))))
@@ -310,10 +343,10 @@ def fetch(targets: pd.DataFrame, root: str, *, dry_run: bool) -> dict:
         return stats
     client = drms.Client()
     expected = [set(g) for g in groups]
-    for g, exp in zip(groups, expected):
-        keyword_check(client, record_set(g), exp)
-    log.info("keyword check passed for %d batches", len(groups))
     if dry_run:
+        for g, exp in zip(groups, expected):
+            keyword_check(client, record_set(g), exp)
+        log.info("keyword check passed for %d batches", len(groups))
         return stats
 
     email = jsoc_email()
@@ -324,7 +357,14 @@ def fetch(targets: pd.DataFrame, root: str, *, dry_run: bool) -> dict:
     exports = read_exports(root)
     session = requests.Session()
     missing: list[str] = []
+    stopped = None
     for i, (g, exp) in enumerate(zip(groups, expected), 1):  # one request at a time
+        if stop_at is not None and datetime.now().astimezone() >= stop_at:
+            left = sum(len(x) for x in groups[i - 1 :])
+            stopped = {"stop_at": stop_at.strftime("%H:%M"), "requests_left": len(groups) - i + 1, "records_left": left}
+            log.warning("stop-at %s reached: %d requests (%d records) not started", stopped["stop_at"], stopped["requests_left"], left)
+            break
+        keyword_check(client, record_set(g), exp)  # just before its export, so the first request starts at once
         log.info("export %d/%d: %d records", i, len(groups), len(g))
         urls, info = export_batch(client, record_set(g), email, len(g))
         log.info("export %d/%d ready: request %s after %.0f s queue wait, %d files", i, len(groups), info["request_id"],
@@ -347,7 +387,7 @@ def fetch(targets: pd.DataFrame, root: str, *, dry_run: bool) -> dict:
         log.info("download %d/%d: %d files, %.1f MB in %.1f s", i, len(groups), len(got), nbytes / 1e6, info["download_s"])
     if missing:
         log.warning("%d requested records came back without a file: %s", len(missing), missing[:10])
-    return stats | {"missing": missing}
+    return stats | {"missing": missing, "stopped": stopped}
 
 
 # ---------------------------------------------------------------- cutouts
@@ -380,9 +420,10 @@ def to_cutout(img: np.ndarray) -> tuple[np.ndarray, float]:
     return out.astype(dtype), nan_fraction
 
 
-def build_shards(targets: pd.DataFrame, root: str) -> tuple[pd.DataFrame, dict]:
+def build_shards(targets: pd.DataFrame, root: str, out_prefix: str | None = None) -> tuple[pd.DataFrame, dict]:
     """Write one shard per month for the targets that have a FITS file; return their index rows and stats."""
     c = cfg()
+    out_prefix = out_prefix or cutouts_prefix()
     rows, proc_s, sizes, nan_files = [], [], [], 0
     for shard, g in targets.groupby("shard", sort=True):
         g = g.sort_values(["T_REC", "HARPNUM"])
@@ -398,7 +439,9 @@ def build_shards(targets: pd.DataFrame, root: str) -> tuple[pd.DataFrame, dict]:
             sizes.append(path.stat().st_size)
             nan_files += nan_fraction > 0
             rows.append((row.HARPNUM, row.T_REC, shard, i, img.shape[0], img.shape[1], nan_fraction))
-        dest = storage.local_path(f"{cutouts_prefix()}/{shard}.npy")
+        if not len(g):
+            continue  # nothing downloaded for this month yet
+        dest = storage.local_path(f"{out_prefix}/{shard}.npy")
         tmp = dest.with_name(f".{dest.name}.part")
         dest.parent.mkdir(parents=True, exist_ok=True)
         with tmp.open("wb") as f:
@@ -422,9 +465,9 @@ def build_shards(targets: pd.DataFrame, root: str) -> tuple[pd.DataFrame, dict]:
     return index, stats
 
 
-def write_index(new: pd.DataFrame) -> Path:
+def write_index(new: pd.DataFrame, out_prefix: str | None = None) -> Path:
     """Replace the rows of the rebuilt shards in index.parquet; rows of other shards are kept unchanged."""
-    rel = f"{cutouts_prefix()}/index.parquet"
+    rel = f"{out_prefix or cutouts_prefix()}/index.parquet"
     dest = storage.local_path(rel)
     storage.pull(rel)
     if dest.exists():
@@ -546,44 +589,62 @@ def preview(index: pd.DataFrame, targets: pd.DataFrame, root: str, out: Path, n:
     return out
 
 
-def upload(root: str, shards: list[str]) -> dict:
-    return {
-        root: storage.upload(root, always_overwrite=(storage.RETRIEVAL_LOG, "exports.json")),
-        cutouts_prefix(): storage.upload(cutouts_prefix(), always_overwrite=("index.parquet", *(f"{s}.npy" for s in shards))),
-    }
+def upload(root: str | None, shards: list[str], out_prefix: str | None = None) -> dict:
+    """Sync the shard prefix (with everything under it) and the raw FITS root unless it is None."""
+    out_prefix = out_prefix or cutouts_prefix()
+    out = {out_prefix: storage.upload(out_prefix, always_overwrite=("index.parquet", *(f"{s}.npy" for s in shards)))}
+    if root is not None:
+        out[root] = storage.upload(root, always_overwrite=(storage.RETRIEVAL_LOG, "exports.json"))
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--pilot", action="store_true", help="the pilot window from configs/data.yaml (the only mode in step 4)")
+    mode = ap.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--pilot", action="store_true", help="the pilot window from configs/data.yaml")
+    mode.add_argument("--targets", type=Path, help="a target list in priority order (e.g. the fme subset); FITS to the step-6 root, shards to <fme prefix>/cutouts")
+    ap.add_argument("--stop-at", metavar="HH:MM", help="local time after which no new export request starts (the one in flight finishes)")
     ap.add_argument("--observations", type=Path, help="observations table for the targets (default: processed/<version>/observations.parquet)")
     ap.add_argument("--full-observations", type=Path, help="full observations table for the projection (default: processed/<version>/observations.parquet)")
     ap.add_argument("--dry-run", action="store_true", help="plan the export batches and keyword-check them; no export, nothing written")
     ap.add_argument("--preview", type=Path, help="write a PNG of 8 cutouts (original vs. resampled) to this path")
-    ap.add_argument("--upload", action="store_true", help="sync the pilot FITS and processed/<version>/cutouts afterwards")
+    ap.add_argument("--upload", action="store_true", help="pilot: sync the pilot FITS and processed/<version>/cutouts; --targets: sync <fme prefix> (shards, index, target list)")
+    ap.add_argument("--upload-raw", action="store_true", help="--targets: also sync the raw FITS root and its logs (large; optional)")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.getLogger("drms").setLevel(logging.WARNING)  # drms logs request URLs, which contain the export address
-    if not args.pilot:
-        ap.error("only --pilot is implemented (step 4); the full download is step 6")
+    if args.upload_raw and not args.targets:
+        ap.error("--upload-raw is for --targets (--pilot --upload already syncs the pilot FITS)")
+    stop_at = stop_time(args.stop_at) if args.stop_at else None
 
     obs = args.observations
     if obs is None:
         if not storage.pull(observations_rel()):
             raise SystemExit(f"{observations_rel()} is neither in data/ nor in the bucket (step 3); or pass --observations")
         obs = storage.local_path(observations_rel())
-    p = load_config()["pilot"]
-    targets = load_targets(obs, date.fromisoformat(p["start"]), date.fromisoformat(p["end"]))
-    root = prefix("sharp_br_pilot")
-    log.info("%d targets, %d HARPs from %s", len(targets), targets.HARPNUM.nunique(), obs)
+    if args.targets:
+        targets = load_target_list(args.targets)
+        root, out_prefix = prefix("sharp_br_full"), f"{load_experiments()['fme']['prefix']}/cutouts"
+        log.info("%d targets, %d HARPs from %s (priority order kept)", len(targets), targets.HARPNUM.nunique(), args.targets)
+    else:
+        p = load_config()["pilot"]
+        targets = load_targets(obs, date.fromisoformat(p["start"]), date.fromisoformat(p["end"]))
+        root, out_prefix = prefix("sharp_br_pilot"), cutouts_prefix()
+        log.info("%d targets, %d HARPs from %s", len(targets), targets.HARPNUM.nunique(), obs)
+    if stop_at:
+        log.info("no new export request after %s local", stop_at.strftime("%Y-%m-%d %H:%M"))
 
     t0 = time.monotonic()
-    fetch_stats = fetch(targets, root, dry_run=args.dry_run)
+    fetch_stats = fetch(targets, root, dry_run=args.dry_run, stop_at=stop_at)
     if args.dry_run:
         return 0
-    index, shard_stats = build_shards(targets, root)
-    write_index(index)
+    index, shard_stats = build_shards(targets, root, out_prefix)
+    write_index(index, out_prefix)
     run_s = round(time.monotonic() - t0, 1)
+    if args.targets and "stratum" in targets.columns:
+        have = targets.merge(index[["HARPNUM", "T_REC"]], on=["HARPNUM", "T_REC"])
+        shard_stats["per_stratum"] = {s: [int(n), int((targets.stratum == s).sum())] for s, n in have.stratum.value_counts().sort_index().items()}
+        log.info("cutouts per stratum [have, listed]: %s", shard_stats["per_stratum"])
 
     keys = ["HARPNUM", "T_REC", *BBOX]
     pilot = index.merge(pd.read_parquet(obs, columns=keys).astype({"HARPNUM": "int32", "T_REC": "string"}), on=["HARPNUM", "T_REC"])
@@ -597,9 +658,16 @@ def main(argv: list[str] | None = None) -> int:
     summary = {"fetch": fetch_stats, "cutouts": shard_stats, "projection": projection(read_exports(root), shard_stats, pilot, full),
                "run_s": run_s}
     if args.preview:
-        summary["preview"] = str(preview(index, targets, root, args.preview))
+        if args.targets:
+            log.warning("--preview is for the pilot week; skipped")
+        else:
+            summary["preview"] = str(preview(index, targets, root, args.preview))
     if args.upload:
-        summary["upload"] = upload(root, sorted(index.shard.unique()))
+        shards = sorted(index.shard.unique())
+        if args.targets:
+            summary["upload"] = upload(root if args.upload_raw else None, shards, load_experiments()["fme"]["prefix"])
+        else:
+            summary["upload"] = upload(root, shards)
     log.info("summary:\n%s", json.dumps(summary, indent=1))
     return 0
 

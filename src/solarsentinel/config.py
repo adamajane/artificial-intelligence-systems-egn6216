@@ -53,3 +53,10 @@ def data_root() -> Path:
 def prefix(name: str) -> str:
     """Bucket-relative prefix for a named area, e.g. ``prefix("goes_sci")``."""
     return load_config()["storage"]["prefixes"][name]
+
+
+@lru_cache(maxsize=1)
+def load_experiments() -> dict[str, Any]:
+    """Parsed ``configs/experiments.yaml`` (seeds, subset sizes, recipes), next to the data config."""
+    with (config_path().parent / "experiments.yaml").open() as f:
+        return yaml.safe_load(f)
