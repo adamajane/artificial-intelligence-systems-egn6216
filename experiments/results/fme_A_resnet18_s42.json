@@ -1,0 +1,218 @@
+{
+ "run_id": "fme_A_resnet18_s42",
+ "change": "none (baseline)",
+ "seed": 42,
+ "model": {
+  "name": "resnet18.a1_in1k",
+  "hf_repo": "timm/resnet18.a1_in1k",
+  "license": "Apache-2.0",
+  "kwargs": null,
+  "upsample_to": null,
+  "frozen_backbone": false,
+  "params": 11170753,
+  "trainable_params": 11170753,
+  "state_dict_mb": 44.76
+ },
+ "recipe": {
+  "seed": 42,
+  "extra_seeds": [
+   0,
+   1
+  ],
+  "clip_percentile": 99.5,
+  "augment": {
+   "hflip": 0.5,
+   "vflip": 0.5,
+   "polarity": 0.5
+  },
+  "epochs": 15,
+  "batch_size": 32,
+  "lr": 0.0001,
+  "weight_decay": 0.05,
+  "warmup_epochs": 1
+ },
+ "clip_c": 1050.0,
+ "pos_weight": 2.0,
+ "data": {
+  "n_train": 630,
+  "n_train_pos": 210,
+  "n_train_harps": 371,
+  "n_val": 630,
+  "n_val_pos": 210,
+  "n_val_harps": 167,
+  "dropped_flagged_train_negatives": false,
+  "val_negative_weight": 13.342857142857143
+ },
+ "metrics": {
+  "n": 630,
+  "n_pos": 210,
+  "n_harps": 167,
+  "threshold": 0.4977658987045288,
+  "tp": 176,
+  "fp": 80,
+  "fn": 34,
+  "tn": 340,
+  "pod": 0.8380952380952381,
+  "pofd": 0.19047619047619047,
+  "tss": 0.6476190476190476,
+  "roc_auc": 0.8781972789115646,
+  "pr_auc_corrected": 0.28926095010980996,
+  "precision_corrected": 0.14154411764705882,
+  "prevalence_corrected": 0.03611971104231166,
+  "brier_corrected": 0.17889748954278206,
+  "bss_corrected": -4.138506138836959,
+  "bootstrap": {
+   "tss_ci95": [
+    0.5198960804782995,
+    0.7441250518237212
+   ],
+   "roc_auc_ci95": [
+    0.8069683915767148,
+    0.9236875076274
+   ],
+   "reps_used": 1000,
+   "reps": 1000,
+   "seed": 0
+  },
+  "excl_flagged_val_negatives": {
+   "n": 572,
+   "n_pos": 210,
+   "n_harps": 156,
+   "threshold": 0.4977658987045288,
+   "tp": 176,
+   "fp": 67,
+   "fn": 34,
+   "tn": 295,
+   "pod": 0.8380952380952381,
+   "pofd": 0.1850828729281768,
+   "tss": 0.6530123651670613,
+   "roc_auc": 0.8805972112601947,
+   "pr_auc_corrected": 0.39081596212693426,
+   "precision_corrected": 0.16449037357472832,
+   "prevalence_corrected": 0.04166572186571733,
+   "brier_corrected": 0.1779640917957564,
+   "bss_corrected": -3.456936532229607
+  }
+ },
+ "history": [
+  {
+   "epoch": 1,
+   "train_loss": 0.9245135954448155,
+   "val_loss": 0.9342725116109091,
+   "lr_end": 0.0001
+  },
+  {
+   "epoch": 2,
+   "train_loss": 0.9014182261058262,
+   "val_loss": 0.9184024952706836,
+   "lr_end": 9.874639560909117e-05
+  },
+  {
+   "epoch": 3,
+   "train_loss": 0.8804092711872524,
+   "val_loss": 0.8839383011772519,
+   "lr_end": 9.504844339512095e-05
+  },
+  {
+   "epoch": 4,
+   "train_loss": 0.8610265758302477,
+   "val_loss": 0.8568608448618934,
+   "lr_end": 8.90915741234015e-05
+  },
+  {
+   "epoch": 5,
+   "train_loss": 0.8324622557276771,
+   "val_loss": 0.8240330232514276,
+   "lr_end": 8.117449009293668e-05
+  },
+  {
+   "epoch": 6,
+   "train_loss": 0.791153671817174,
+   "val_loss": 0.7919442366039943,
+   "lr_end": 7.169418695587791e-05
+  },
+  {
+   "epoch": 7,
+   "train_loss": 0.7661498896659367,
+   "val_loss": 0.7663366268551539,
+   "lr_end": 6.112604669781572e-05
+  },
+  {
+   "epoch": 8,
+   "train_loss": 0.7429425922651139,
+   "val_loss": 0.7440324382176475,
+   "lr_end": 5e-05
+  },
+  {
+   "epoch": 9,
+   "train_loss": 0.7200815109979539,
+   "val_loss": 0.7247459146711561,
+   "lr_end": 3.887395330218429e-05
+  },
+  {
+   "epoch": 10,
+   "train_loss": 0.6981230890940107,
+   "val_loss": 0.7149233341217041,
+   "lr_end": 2.8305813044122097e-05
+  },
+  {
+   "epoch": 11,
+   "train_loss": 0.6952249564821757,
+   "val_loss": 0.7083606731323969,
+   "lr_end": 1.8825509907063327e-05
+  },
+  {
+   "epoch": 12,
+   "train_loss": 0.6825019811827039,
+   "val_loss": 0.6997167574034797,
+   "lr_end": 1.0908425876598516e-05
+  },
+  {
+   "epoch": 13,
+   "train_loss": 0.6662811763702877,
+   "val_loss": 0.7018040204805042,
+   "lr_end": 4.951556604879048e-06
+  },
+  {
+   "epoch": 14,
+   "train_loss": 0.6799378824612451,
+   "val_loss": 0.698217817526015,
+   "lr_end": 1.2536043909088191e-06
+  },
+  {
+   "epoch": 15,
+   "train_loss": 0.6743646402207631,
+   "val_loss": 0.6978014843804495,
+   "lr_end": 0.0
+  }
+ ],
+ "timing": {
+  "device": "mps",
+  "train_s": 21.3,
+  "epoch_s": [
+   1.3,
+   1.13,
+   1.14,
+   1.16,
+   1.14,
+   1.15,
+   1.14,
+   1.15,
+   1.14,
+   1.18,
+   1.16,
+   1.14,
+   1.1,
+   1.17,
+   1.14
+  ],
+  "epoch_s_median": 1.14
+ },
+ "versions": {
+  "python": "3.13.5",
+  "torch": "2.14.1",
+  "timm": "1.0.30",
+  "machine": "arm64",
+  "system": "Darwin"
+ }
+}
