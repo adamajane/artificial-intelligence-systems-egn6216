@@ -40,6 +40,16 @@ needs no credentials and no local data.
 | SDO/HMI SHARP keywords (JSOC): 18 summary parameters per 12-min record            | series `hmi.sharp_cea_720s`, keyword queries with `drms` 0.9.1                                        | [jsoc.stanford.edu](http://jsoc.stanford.edu/)                                                                                                          | 2026-10-06      | NASA open data, free to redistribute. Credit: "Courtesy of NASA/SDO and the HMI science team." |
 | SDO/HMI SHARP `Br` cutouts (JSOC): radial field images, pilot week                | series `hmi.sharp_cea_720s`, segment `Br`; JSOC export requests listed in `exports.json`              | [jsoc.stanford.edu](http://jsoc.stanford.edu/)                                                                                                          | 2026-10-06      | NASA open data, free to redistribute. Credit: "Courtesy of NASA/SDO and the HMI science team." |
 
+| SDO/HMI SHARP `Br` cutouts (JSOC): First Model Exploration subset                 | same series and segment; stratified target list `processed/v1/experiments/fme/targets.parquet`       | [jsoc.stanford.edu](http://jsoc.stanford.edu/)                                                                                                          | 2026-10-27      | NASA open data, free to redistribute. Credit: "Courtesy of NASA/SDO and the HMI science team." |
+
+**Pretrained models** (First Model Exploration, `training_experiments.ipynb`), loaded with `timm` 1.0.30 from the
+Hugging Face Hub:
+
+| Model        | Hugging Face repo                                                                             | License    |
+| ------------ | --------------------------------------------------------------------------------------------- | ---------- |
+| ResNet-18    | [`timm/resnet18.a1_in1k`](https://huggingface.co/timm/resnet18.a1_in1k)                       | Apache-2.0 |
+| DeiT-Tiny/16 | [`timm/deit_tiny_patch16_224.fb_in1k`](https://huggingface.co/timm/deit_tiny_patch16_224.fb_in1k) | Apache-2.0 |
+
 Every downloaded file has an entry in a retrieval log stored next to it in the bucket. Each entry records the exact
 URL or JSOC query, the retrieval time (UTC), the byte count and a sha256:
 `raw/goes/retrieval_log.json`, `raw/jsoc/retrieval_log.json` and `raw/jsoc/sharp_cea_720s_Br/pilot/retrieval_log.json`.
