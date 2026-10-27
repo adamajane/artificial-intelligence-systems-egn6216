@@ -14,3 +14,24 @@ fme:
     # Tier 2, after tier 1, in case the download runs faster than expected: more train data, same 1:2.
     tier2: { TP: 233, TN: 466 }
     tier2_pattern: [TP, TN, TN]
+  # Recipe (plan 0.5): runs A and B are identical except the architecture.
+  recipe:
+    seed: 42
+    extra_seeds: [0, 1] # seed check for A and B (plan 0.5)
+    clip_percentile: 99.5 # c = this percentile of |Br| over train pixels; input = clip(Br, -c, c) / c
+    augment: { hflip: 0.5, vflip: 0.5, polarity: 0.5 } # train only; polarity flip = x -> -x
+    epochs: 15
+    batch_size: 32
+    lr: 1.0e-4
+    weight_decay: 0.05
+    warmup_epochs: 1 # linear warmup, then cosine to 0 (per step)
+  models:
+    A: { name: resnet18.a1_in1k, hf_repo: timm/resnet18.a1_in1k, license: Apache-2.0 }
+    B: { name: deit_tiny_patch16_224.fb_in1k, hf_repo: timm/deit_tiny_patch16_224.fb_in1k, license: Apache-2.0, kwargs: { img_size: 128 } }
+  eval:
+    val_negatives_total: 5604 # natural 2015 val negatives; weight per downloaded val negative = this / n (plan 0.4)
+    bootstrap_reps: 1000
+    bootstrap_seed: 0
+    reliability_bins: 10
+  latency: { warmup: 20, reps: 200, batch_sizes: [1, 15], threads: null } # CPU, inference_mode; null = torch default
+  results_dir: experiments/results
