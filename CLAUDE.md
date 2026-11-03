@@ -7,7 +7,8 @@ deployment and monitoring.
 ## Where things are
 
 - `docs/data-pipeline-plan.md`: how the dataset is built (sources, labels, splits, build order).
-- `docs/2-model-experiment-plan.md`: **current step** (First Model Exploration). Read it before model work.
+- `docs/3-milestone4-plan.md`: **current step** (Milestone 4, AI component and experiments). Read it before model work.
+- `docs/2-model-experiment-plan.md`: previous step (First Model Exploration).
 - `configs/data.yaml`: every data rule. The single source of truth; code never hard-codes a rule.
 - `src/solarsentinel/`: the package (`data/` pipeline steps; `models/` for training and evaluation).
 - `playground.ipynb` (data exploration) and `training_experiments.ipynb` (experiments). Both read from the bucket.
