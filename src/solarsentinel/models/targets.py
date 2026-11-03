@@ -96,6 +96,51 @@ def check(t: pd.DataFrame, cfg: dict) -> None:
         raise ValueError("first round does not follow the pattern")
 
 
+def m4_targets_rel() -> str:
+    return f"{load_experiments()['m4']['prefix']}/targets.parquet"
+
+
+def on_disk(obs: pd.DataFrame) -> np.ndarray:
+    """True where the row's Br FITS already exists locally (step-6 root or pilot root)."""
+    from solarsentinel.data.cutouts import fits_rel
+
+    roots = [prefix("sharp_br_full"), prefix("sharp_br_pilot")]
+    return np.array([any(storage.local_path(fits_rel(r, h, t)).exists() for r in roots) for h, t in zip(obs.HARPNUM, obs.T_REC)])
+
+
+def build_m4(obs: pd.DataFrame, have: np.ndarray, cfg: dict) -> pd.DataFrame:
+    """Milestone 4 download list (plan 2.4) from gap-filtered train/val rows: val first, then train, each interleaved 1:k.
+
+    Only rows without a FITS file. Every remaining positive; k = neg_per_pos negatives per positive, val from all
+    negatives, train from clean negatives only (has_unattributed_mx ones are excluded by the training rule).
+    """
+    rng = np.random.default_rng(cfg["seed"])
+    order_ix = obs.sort_values(["HARPNUM", "T_REC"]).index  # fixed order before shuffling
+    obs, have = obs.loc[order_ix].reset_index(drop=True), pd.Series(have, index=obs.index).loc[order_ix].to_numpy()
+    k = cfg["neg_per_pos"]
+    pools: dict[str, list[int]] = {}
+    for s, (split, label) in STRATA.items():  # fixed stratum order, one rng stream
+        m = (obs.split == split) & (obs.label == label) & ~have
+        if s == "TN":
+            m &= ~obs.has_unattributed_mx
+        pools[s] = rng.permutation(obs.index[m].to_numpy()).tolist()
+    pools["VN"], pools["TN"] = pools["VN"][: k * len(pools["VP"])], pools["TN"][: k * len(pools["TP"])]
+    order = [(1, s, i) for s, i in interleave({s: pools[s] for s in ("VP", "VN")}, cfg["val_pattern"])]
+    order += [(2, s, i) for s, i in interleave({s: pools[s] for s in ("TP", "TN")}, cfg["train_pattern"])]
+    rows = obs.loc[[i for _, _, i in order]].reset_index(drop=True)
+    rows["stratum"] = [s for _, s, _ in order]
+    rows["tier"] = np.array([t for t, _, _ in order], dtype="int8")  # 1 = val block, 2 = train block
+    rows["priority"] = np.arange(len(rows), dtype="int32")
+    rows["shard"] = rows.t_rec_utc.dt.strftime("%Y-%m")
+    out = rows[COLUMNS].astype({"HARPNUM": "int32", "T_REC": "string", "split": "string", "label": "int8", "stratum": "string"})
+    if out.duplicated(["HARPNUM", "T_REC"]).any() or not set(out.split) <= {"train", "val"}:
+        raise ValueError("m4 target list: duplicate rows or a split other than train/val")
+    flagged_tn = out[out.stratum == "TN"].merge(obs[["HARPNUM", "T_REC", "has_unattributed_mx"]], on=["HARPNUM", "T_REC"])
+    if flagged_tn.has_unattributed_mx.any():
+        raise ValueError("m4 target list: flagged train negative selected")
+    return out
+
+
 def summary(t: pd.DataFrame, obs: pd.DataFrame) -> dict:
     flagged = t.merge(obs[["HARPNUM", "T_REC", "has_unattributed_mx"]], on=["HARPNUM", "T_REC"])
     return {
@@ -111,6 +156,7 @@ def summary(t: pd.DataFrame, obs: pd.DataFrame) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--observations", type=Path, help="default: processed/<version>/observations.parquet (pulled from the bucket)")
+    ap.add_argument("--m4", action="store_true", help="Milestone 4 list (plan 2.4): rows without FITS, after the v2 gap; to <m4 prefix>/targets.parquet")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     path = args.observations
@@ -120,8 +166,19 @@ def main(argv: list[str] | None = None) -> int:
         path = storage.local_path(observations_rel())
     obs = pd.read_parquet(path, columns=["HARPNUM", "T_REC", "t_rec_utc", "split", "label", "has_unattributed_mx"])
     obs = obs[obs.split.isin(["train", "val"])]  # replay never enters this step
-    t = build(obs, load_experiments()["fme"]["targets"])
-    dest = storage.local_path(targets_rel())
+    if args.m4:
+        from solarsentinel.data.v2 import gap_cutoffs, gap_filter
+
+        obs = pd.read_parquet(path, columns=["HARPNUM", "T_REC", "t_rec_utc", "slot_time", "split", "label", "has_unattributed_mx"])
+        obs = gap_filter(obs[obs.split.isin(["train", "val"])])
+        have = on_disk(obs)
+        t = build_m4(obs, have, load_experiments()["m4"]["targets"])
+        log.info("val gap: first allowed slot %s; on disk after gap: %s", gap_cutoffs(obs)["val"],
+                 {f"{s}/{l}": int(n) for (s, l), n in obs[have].groupby(["split", "label"]).size().items()})
+        dest = storage.local_path(m4_targets_rel())
+    else:
+        t = build(obs, load_experiments()["fme"]["targets"])
+        dest = storage.local_path(targets_rel())
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_name(f".{dest.name}.part")
     t.to_parquet(tmp, index=False)

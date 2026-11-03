@@ -41,6 +41,7 @@ cloudpickle==3.1.2
 colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   ipython
+    #   pytest
     #   tqdm
 comm==0.2.3
     # via ipykernel
@@ -152,6 +153,8 @@ idna==3.20
     #   yarl
 imageio==2.38.0
     # via scikit-image
+iniconfig==2.3.1
+    # via pytest
 ipykernel==7.4.0
 ipython==9.17.1
     # via ipykernel
@@ -291,6 +294,7 @@ packaging==26.3
     #   lazy-loader
     #   matplotlib
     #   nbconvert
+    #   pytest
     #   scikit-image
     #   xarray
 pandas==3.0.6
@@ -312,6 +316,8 @@ pillow==12.3.0
     #   torchvision
 platformdirs==4.12.3
     # via jupyter-core
+pluggy==1.7.0
+    # via pytest
 prompt-toolkit==3.0.53
     # via ipython
 propcache==0.5.4
@@ -351,8 +357,10 @@ pygments==2.21.0
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
+    #   pytest
 pyparsing==3.3.3
     # via matplotlib
+pytest==9.2.0
 python-dateutil==2.9.0.post0
     # via
     #   jupyter-client

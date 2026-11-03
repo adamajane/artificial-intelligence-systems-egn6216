@@ -137,3 +137,26 @@ pilot:
   end: "2014-10-27"
   harpnum: 4698 # AR 12192, X3.1 on 2014-10-24
   preview_time: "2014-10-24T18:00:00Z" # preview cutouts: each HARP's row nearest this (last slot before the X3.1 peak at 21:41 UTC)
+
+# Milestone 4 rule set (docs/3-milestone4-plan.md section 2). Outputs go to processed/v2/; every v1 rule above stays
+# frozen (processed/v1 is never rewritten).
+v2:
+  dataset_version: v2
+  # Achieved gap (plan 2.1): a later block (val after train, replay after val) drops every observation whose
+  # slot_time is earlier than the previous block's last slot_time + this. HARPs that cross a boundary keep train
+  # rows until 2015-01-09 06:00, so the calendar boundary alone is not enough.
+  split_gap_days: 27
+  # Frozen label rule for every Milestone 4 comparison (plan 2.2). has_unattributed_mx stays a flag, never an input.
+  label_rule:
+    train_exclude_flagged_negatives: true # drop has_unattributed_mx & label == 0 from training; quality_nonzero rows stay
+    eval_primary: all # every gap-corrected val case that has an image
+    eval_clean_exclude: [flagged_negatives, quality_nonzero] # secondary "clean" subset = primary minus these
+    # Pilot-week negatives (2014-10-20..27, all HARPs) are not a random sample: kept out of training. Pilot positives
+    # are used (developer decision 2026-11-02).
+    train_exclude_pilot_negatives: true
+  # Padded cutouts (plan 2.3): zero-pad the FITS array to a square (centered; a zero field is physically neutral),
+  # then the v1 cutouts rules (nan_fill, anti-aliased resize to size, dtype). pad_fraction is recorded per cutout.
+  # NaN-filled pixels and padding are both 0, so the model cannot tell them apart (known limitation).
+  cutouts:
+    pad_to_square: true
+    pad_value: 0.0

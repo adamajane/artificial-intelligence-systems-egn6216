@@ -607,6 +607,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--observations", type=Path, help="observations table for the targets (default: processed/<version>/observations.parquet)")
     ap.add_argument("--full-observations", type=Path, help="full observations table for the projection (default: processed/<version>/observations.parquet)")
     ap.add_argument("--dry-run", action="store_true", help="plan the export batches and keyword-check them; no export, nothing written")
+    ap.add_argument("--fetch-only", action="store_true", help="download the FITS (and log the exports) but build no shards, e.g. for the v2 list, whose shards the v2 step builds")
     ap.add_argument("--preview", type=Path, help="write a PNG of 8 cutouts (original vs. resampled) to this path")
     ap.add_argument("--upload", action="store_true", help="pilot: sync the pilot FITS and processed/<version>/cutouts; --targets: sync <fme prefix> (shards, index, target list)")
     ap.add_argument("--upload-raw", action="store_true", help="--targets: also sync the raw FITS root and its logs (large; optional)")
@@ -637,6 +638,9 @@ def main(argv: list[str] | None = None) -> int:
     t0 = time.monotonic()
     fetch_stats = fetch(targets, root, dry_run=args.dry_run, stop_at=stop_at)
     if args.dry_run:
+        return 0
+    if args.fetch_only:
+        log.info("fetch only, no shards built:\n%s", json.dumps(fetch_stats | {"run_s": round(time.monotonic() - t0, 1)}, indent=1))
         return 0
     index, shard_stats = build_shards(targets, root, out_prefix)
     write_index(index, out_prefix)

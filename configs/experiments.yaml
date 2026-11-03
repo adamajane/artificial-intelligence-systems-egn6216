@@ -35,3 +35,41 @@ fme:
     reliability_bins: 10
   latency: { warmup: 20, reps: 200, batch_sizes: [1, 15], threads: null } # CPU, inference_mode; null = torch default
   results_dir: experiments/results
+
+m4: # Milestone 4 (docs/3-milestone4-plan.md)
+  prefix: processed/v2/experiments/m4 # targets.parquet; cutouts_stretch/ (E2 comparison arm)
+  targets:
+    seed: 42
+    # Tonight's download list (plan 2.4): only rows with no FITS on disk (full or pilot root), after the v2 gap.
+    # Val first: every remaining positive and neg_per_pos negatives each, from all negatives (evaluation rule).
+    # Then train: every remaining positive and neg_per_pos negatives each, from clean negatives only (the training
+    # rule excludes has_unattributed_mx negatives, so downloading them is wasted). Any prefix that finishes is 1:2.
+    neg_per_pos: 2
+    val_pattern: [VP, VN, VN]
+    train_pattern: [TP, TN, TN]
+  # Shared recipe (plan 4): the first-exploration recipe with 20 epochs. The final epoch is evaluated, no early
+  # stopping (selecting on val twice would inflate it; a change from Milestone 3's R4 control).
+  recipe:
+    seed: 42
+    extra_seeds: [0, 1]
+    clip_percentile: 99.5 # c per arm, over that arm's train pixels
+    # c over non-zero pixels only (developer decision 2026-11-02): padding makes ~48% of pad-arm pixels 0, which pulls
+    # the all-pixel c down to 729.5 G (pad) vs 1,090.0 G (stretch) on the 667-image dry run; over non-zero pixels
+    # 1,026.0 vs 1,094.0, so E2 changes the shape, not the clip level.
+    clip_exclude_zero: true
+    augment: { hflip: 0.5, vflip: 0.5, polarity: 0.5 }
+    epochs: 20
+    batch_size: 32
+    lr: 1.0e-4
+    weight_decay: 0.05
+    warmup_epochs: 1
+  models: { A: resnet18, B: deit_tiny } # keys of fme.models -> run-ID names
+  eval:
+    val_negatives_total: 4977 # gap-corrected natural 2015 val negatives (processed/v2/split_audit.json)
+    bootstrap_reps: 1000
+    bootstrap_seed: 0
+    reliability_bins: 10
+    calibration_folds: 2 # E3: HARP-grouped cross-fitting within val
+    calibration_bins: 5 # E3 PR2 check 3: equal-count bins
+    thin_aspect: 2.0 # E2: thin region = long side / short side >= this
+  results_dir: experiments/results
