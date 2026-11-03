@@ -201,6 +201,38 @@ def paired_diff(rids_a: list[str], rids_b: list[str], *, reps: int | None = None
             "n": len(y), "n_pos": int(y.sum()), "n_harps": len(uniq)}
 
 
+
+def paired_vs_persistence(rids: list[str], *, reps: int | None = None, seed: int | None = None) -> dict:
+    """HARP-bootstrap 95% CI of mean-over-seeds model TSS - persistence TSS on the model's own val cases."""
+    from solarsentinel.models import baseline
+
+    ev = m4_cfg()["eval"]
+    reps, seed = reps or ev["bootstrap_reps"], ev["bootstrap_seed"] if seed is None else seed
+    recs, preds = zip(*(load_run(r) for r in rids))
+    preds = _aligned(list(preds))
+    obs = dataset.load_observations("v2", ("val",))
+    obs = obs.assign(pers=baseline.persistence(obs).astype(float), T_REC=obs.T_REC.astype(str))
+    pers = preds[0][["HARPNUM", "T_REC"]].merge(obs[["HARPNUM", "T_REC", "pers"]], on=["HARPNUM", "T_REC"], how="left",
+                                                validate="one_to_one").pers.to_numpy()
+    y, harps = preds[0].label.to_numpy(), preds[0].HARPNUM.to_numpy()
+    ts = [r["metrics"]["threshold"] for r in recs]
+    uniq, inv = np.unique(harps, return_inverse=True)
+    members = [np.flatnonzero(inv == k) for k in range(len(uniq))]
+    rng = np.random.default_rng(seed)
+
+    def diff(idx):
+        m = np.mean([metrics.confusion(y[idx], d.p.to_numpy()[idx], t)["tss"] for d, t in zip(preds, ts)])
+        return m - metrics.confusion(y[idx], pers[idx], 1.0)["tss"]
+
+    point = diff(np.arange(len(y)))
+    d = []
+    for _ in range(reps):
+        idx = np.concatenate([members[k] for k in rng.integers(0, len(uniq), len(uniq))])
+        if y[idx].min() != y[idx].max():
+            d.append(diff(idx))
+    return {"diff_model_minus_persistence": float(point), "diff_ci95": [float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))],
+            "reps_used": len(d), "seed": seed, "n": len(y), "n_pos": int(y.sum())}
+
 def persistence_rows(case_keys: pd.DataFrame | None = None) -> dict:
     """Persistence on the full gap-corrected val and (if given) on the model's exact val cases."""
     from solarsentinel.models import baseline
