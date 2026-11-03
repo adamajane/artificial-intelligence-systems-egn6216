@@ -79,14 +79,19 @@ def fit(model: nn.Module, train_ds, val_ds, recipe: dict, dev: torch.device, pos
             for x, y in val_loader:
                 x, y = x.to(dev), y.to(dev)
                 vt, vn = vt + loss_fn(model(x).squeeze(1), y).item() * len(y), vn + len(y)
-        history.append({"epoch": epoch, "train_loss": tot / n, "val_loss": vt / vn, "lr_end": sched.get_last_lr()[0]})
+        mem = round(torch.mps.driver_allocated_memory() / 1e6, 1) if dev.type == "mps" else None  # MB held by the mps driver
+        history.append({"epoch": epoch, "train_loss": tot / n, "val_loss": vt / vn, "lr_end": sched.get_last_lr()[0], "mps_driver_mb": mem})
     return history, epoch_s
 
 
 def run(run_id: str, spec: dict, train: tuple[np.ndarray, pd.DataFrame], val: tuple[np.ndarray, pd.DataFrame], c: float,
         fme: dict, *, change: str = "none", seed: int | None = None, freeze: bool = False, upsample_to: int | None = None,
-        drop_flagged_train_negatives: bool = False, dev: torch.device | None = None) -> dict:
-    """Train, evaluate the final epoch on val, write the run record. Returns the record (with ``p`` added, not saved)."""
+        drop_flagged_train_negatives: bool = False, dev: torch.device | None = None, extra: dict | None = None) -> dict:
+    """Train, evaluate the final epoch on val, write the run record. Returns the record (with ``p`` added, not saved).
+
+    ``extra`` (e.g. Milestone 4 provenance: git commit, dataset version + manifest hash, label rule, arm) is stored
+    in the record under ``"extra"``.
+    """
     recipe, ev = fme["recipe"], fme["eval"]
     seed = recipe["seed"] if seed is None else seed
     dev = dev or nets.device()
@@ -133,6 +138,8 @@ def run(run_id: str, spec: dict, train: tuple[np.ndarray, pd.DataFrame], val: tu
         "versions": {"python": platform.python_version(), "torch": torch.__version__, "timm": timm.__version__,
                      "machine": platform.machine(), "system": platform.system()},
     }
+    if extra:
+        record["extra"] = extra
     out = repo_root() / fme["results_dir"]
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{run_id}.json").write_text(json.dumps(record, indent=1) + "\n")
