@@ -141,6 +141,49 @@ def build_m4(obs: pd.DataFrame, have: np.ndarray, cfg: dict) -> pd.DataFrame:
     return out
 
 
+def replay_targets_rel() -> str:
+    return f"{load_experiments()['m5']['replay_prefix']}/targets.parquet"
+
+
+REPLAY_COLUMNS = ["HARPNUM", "T_REC", "split", "priority", "shard"]
+
+
+def build_replay(obs: pd.DataFrame) -> pd.DataFrame:
+    """Milestone 5 replay list (docs/4-milestone5-plan.md 4.1): every v2 replay observation, inputs only.
+
+    ``obs`` comes from ``dataset.load_observations("v2", ("replay",), <input columns>)``, which refuses label
+    columns. Time order (T_REC, then HARPNUM), so any prefix that finishes covers whole months.
+    """
+    rows = obs.sort_values(["T_REC", "HARPNUM"]).reset_index(drop=True)
+    rows["split"] = "replay"
+    rows["priority"] = np.arange(len(rows), dtype="int32")
+    rows["shard"] = rows.t_rec_utc.dt.strftime("%Y-%m")
+    out = rows[REPLAY_COLUMNS].astype({"HARPNUM": "int32", "T_REC": "string", "split": "string"})
+    if out.duplicated(["HARPNUM", "T_REC"]).any():
+        raise ValueError("replay target list: duplicate (HARPNUM, T_REC) rows")
+    return out
+
+
+def replay_summary(t: pd.DataFrame, have: np.ndarray) -> dict:
+    """Records, months, export requests (same batching as the real run) and the projected time at the M4 rate."""
+    from solarsentinel.data.cutouts import batch_pairs, cfg, record_set
+    from solarsentinel.models import m4
+
+    todo = t[~have]
+    groups = batch_pairs(list(zip(todo.HARPNUM.astype(int), todo.T_REC.astype(str))))
+    raw = [len(record_set(g)) for g in groups]
+    rate = m4.export_throughput()
+    per_h = rate.get("records_per_wall_h")
+    return {
+        "targets": len(t), "harps": int(t.HARPNUM.nunique()), "already_on_disk": int(have.sum()), "to_export": len(todo),
+        "per_month": t.shard.value_counts().sort_index().to_dict(),
+        "export_requests": len(groups), "records_per_request_max": max((len(g) for g in groups), default=0),
+        "recordset_chars_max": max(raw, default=0), "max_recordset_chars_limit": cfg()["max_recordset_chars"],
+        "m4_records_per_wall_h": per_h,
+        "projected_hours_at_m4_rate": round(len(todo) / per_h, 2) if per_h else None,
+    }
+
+
 def summary(t: pd.DataFrame, obs: pd.DataFrame) -> dict:
     flagged = t.merge(obs[["HARPNUM", "T_REC", "has_unattributed_mx"]], on=["HARPNUM", "T_REC"])
     return {
@@ -157,8 +200,21 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--observations", type=Path, help="default: processed/<version>/observations.parquet (pulled from the bucket)")
     ap.add_argument("--m4", action="store_true", help="Milestone 4 list (plan 2.4): rows without FITS, after the v2 gap; to <m4 prefix>/targets.parquet")
+    ap.add_argument("--replay", action="store_true", help="Milestone 5 replay list (M5 plan 4.1): every v2 replay row, inputs only, time order; to processed/v2/replay/targets.parquet")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    if args.replay:
+        from solarsentinel.models import dataset
+
+        obs = dataset.load_observations("v2", ("replay",), ["HARPNUM", "T_REC", "t_rec_utc", "slot_time"])  # no labels
+        t = build_replay(obs)
+        dest = storage.local_path(replay_targets_rel())
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_name(f".{dest.name}.part")
+        t.to_parquet(tmp, index=False)
+        tmp.replace(dest)
+        log.info("wrote %s\n%s", dest.relative_to(storage.local_path("")), json.dumps(replay_summary(t, on_disk(t)), indent=1))
+        return 0
     path = args.observations
     if path is None:
         if not storage.pull(observations_rel()):

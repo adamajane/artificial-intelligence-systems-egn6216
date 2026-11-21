@@ -73,3 +73,17 @@ m4: # Milestone 4 (docs/3-milestone4-plan.md)
     calibration_bins: 5 # E3 PR2 check 3: equal-count bins
     thin_aspect: 2.0 # E2: thin region = long side / short side >= this
   results_dir: experiments/results
+
+m5: # Milestones 5-6 (docs/4-milestone5-plan.md). The v2 block in data.yaml is not touched (its hash is in the M4 manifest).
+  results_dir: experiments/results/m5
+  replay_prefix: processed/v2/replay # targets.parquet, cutouts/ (shards + index.parquet), manifest.json (plan 4.2)
+  bundle: # plan 2: retrain the selected model once with the exact M4 recipe and freeze it
+    prefix: models # bucket-relative (data/models/ locally, gitignored); containers fetch it over public HTTPS
+    run_id: m5_bundle_resnet18_pad_s42
+    model: A # fme.models key: resnet18.a1_in1k
+    arm: pad
+    seed: 42
+    expected_clip_c: 980.5 # M4 pad arm; a different c means the training data or code differ: stop (plan 2.1)
+    accept_val_tss: [0.66, 0.72] # plan 2.5, decided before the retrain: M4 0.692 +- 0.014 over 3 seeds, about +-2 sd
+    m4_threshold: 0.048 # M4 calibrated threshold (old weights), reported next to the re-picked one
+    parity_max_abs_diff: 1.0e-5 # plan 10: API score vs the CPU-path score

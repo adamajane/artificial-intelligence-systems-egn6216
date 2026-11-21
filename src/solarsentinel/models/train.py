@@ -4,7 +4,8 @@
 evaluates the **final** epoch on the val cases (per-epoch losses are only for
 the learning curves), and writes ``<results_dir>/<run_id>.json`` (config,
 metrics, timings) and ``<run_id>_val_preds.parquet`` (HARPNUM, T_REC, label, p).
-Weights are not saved (they stay out of git).
+Weights are not saved here (they stay out of git); ``return_model`` hands the trained network to the caller
+(Milestone 5 bundle, ``solarsentinel.models.bundle``).
 """
 
 from __future__ import annotations
@@ -86,7 +87,8 @@ def fit(model: nn.Module, train_ds, val_ds, recipe: dict, dev: torch.device, pos
 
 def run(run_id: str, spec: dict, train: tuple[np.ndarray, pd.DataFrame], val: tuple[np.ndarray, pd.DataFrame], c: float,
         fme: dict, *, change: str = "none", seed: int | None = None, freeze: bool = False, upsample_to: int | None = None,
-        drop_flagged_train_negatives: bool = False, dev: torch.device | None = None, extra: dict | None = None) -> dict:
+        drop_flagged_train_negatives: bool = False, dev: torch.device | None = None, extra: dict | None = None,
+        return_model: bool = False) -> dict:
     """Train, evaluate the final epoch on val, write the run record. Returns the record (with ``p`` added, not saved).
 
     ``extra`` (e.g. Milestone 4 provenance: git commit, dataset version + manifest hash, label rule, arm) is stored
@@ -145,4 +147,4 @@ def run(run_id: str, spec: dict, train: tuple[np.ndarray, pd.DataFrame], val: tu
     (out / f"{run_id}.json").write_text(json.dumps(record, indent=1) + "\n")
     pd.DataFrame({"HARPNUM": mva.HARPNUM.to_numpy(), "T_REC": mva.T_REC.astype(str).to_numpy(), "label": yva.astype("int8"),
                   "p": p.astype("float32")}).to_parquet(out / f"{run_id}_val_preds.parquet", index=False)
-    return record | {"p": p}
+    return record | {"p": p} | ({"model_obj": model} if return_model else {})

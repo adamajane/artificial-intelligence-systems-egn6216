@@ -133,15 +133,22 @@ def load_targets(path: Path, start: date, end: date) -> pd.DataFrame:
     return df.sort_values(["T_REC", "HARPNUM"]).reset_index(drop=True)
 
 
-def load_target_list(path: Path) -> pd.DataFrame:
-    """A ready-made target list (HARPNUM, T_REC, shard, priority, ...), in priority order. The order is kept for the export."""
+def load_target_list(path: Path, *, replay: bool = False) -> pd.DataFrame:
+    """A ready-made target list (HARPNUM, T_REC, shard, priority, ...), in priority order. The order is kept for the export.
+
+    ``replay``: the Milestone 5 replay list (inputs only, ``targets --replay``): every row must be replay and the list
+    must carry no label column. Otherwise replay rows are refused (never downloaded for experiments).
+    """
     df = pd.read_parquet(path).astype({"HARPNUM": "int32", "T_REC": "string"})
     missing = {"HARPNUM", "T_REC", "shard", "priority"} - set(df.columns)
     if missing:
         raise ValueError(f"{path}: missing columns {sorted(missing)}")
     if df.duplicated(["HARPNUM", "T_REC"]).any():
         raise ValueError(f"{path}: duplicate (HARPNUM, T_REC) rows")
-    if "split" in df.columns and (df.split == "replay").any():
+    if replay:
+        if "split" not in df.columns or not (df.split == "replay").all() or {"label", "label_class"} & set(df.columns):
+            raise ValueError(f"{path}: --replay needs a replay-only list without label columns (targets --replay)")
+    elif "split" in df.columns and (df.split == "replay").any():
         raise ValueError(f"{path}: contains replay rows; the replay set is never downloaded for experiments")
     return df.sort_values("priority").reset_index(drop=True)
 
@@ -337,7 +344,9 @@ def fetch(targets: pd.DataFrame, root: str, *, dry_run: bool, stop_at: datetime 
     todo = targets[~have]
     groups = batch_pairs(list(zip(todo.HARPNUM.astype(int), todo.T_REC.astype(str))))
     stats = {"targets": len(targets), "already_local": int(have.sum()), "to_export": len(todo), "requests": len(groups),
-             "batch_sizes": [len(g) for g in groups]}
+             "batch_sizes": [len(g) for g in groups],
+             "recordset_chars_max": max((len(record_set(g)) for g in groups), default=0),
+             "request_chars_max": max((len(quote_plus(record_set(g))) for g in groups), default=0)}
     log.info("fetch plan: %s", json.dumps(stats))
     if not groups:
         return stats
@@ -608,6 +617,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--full-observations", type=Path, help="full observations table for the projection (default: processed/<version>/observations.parquet)")
     ap.add_argument("--dry-run", action="store_true", help="plan the export batches and keyword-check them; no export, nothing written")
     ap.add_argument("--fetch-only", action="store_true", help="download the FITS (and log the exports) but build no shards, e.g. for the v2 list, whose shards the v2 step builds")
+    ap.add_argument("--replay", action="store_true", help="--targets is the Milestone 5 replay list (targets --replay): allows replay rows, implies --fetch-only (replay shards are built by cutouts_replay)")
     ap.add_argument("--preview", type=Path, help="write a PNG of 8 cutouts (original vs. resampled) to this path")
     ap.add_argument("--upload", action="store_true", help="pilot: sync the pilot FITS and processed/<version>/cutouts; --targets: sync <fme prefix> (shards, index, target list)")
     ap.add_argument("--upload-raw", action="store_true", help="--targets: also sync the raw FITS root and its logs (large; optional)")
@@ -616,6 +626,12 @@ def main(argv: list[str] | None = None) -> int:
     logging.getLogger("drms").setLevel(logging.WARNING)  # drms logs request URLs, which contain the export address
     if args.upload_raw and not args.targets:
         ap.error("--upload-raw is for --targets (--pilot --upload already syncs the pilot FITS)")
+    if args.replay:
+        if not args.targets:
+            ap.error("--replay needs --targets <processed/v2/replay/targets.parquet>")
+        args.fetch_only = True  # never build shards into the frozen fme prefix
+        if args.upload or args.preview:
+            ap.error("--replay is fetch-only: no --upload or --preview")
     stop_at = stop_time(args.stop_at) if args.stop_at else None
 
     obs = args.observations
@@ -624,7 +640,7 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit(f"{observations_rel()} is neither in data/ nor in the bucket (step 3); or pass --observations")
         obs = storage.local_path(observations_rel())
     if args.targets:
-        targets = load_target_list(args.targets)
+        targets = load_target_list(args.targets, replay=args.replay)
         root, out_prefix = prefix("sharp_br_full"), f"{load_experiments()['fme']['prefix']}/cutouts"
         log.info("%d targets, %d HARPs from %s (priority order kept)", len(targets), targets.HARPNUM.nunique(), args.targets)
     else:

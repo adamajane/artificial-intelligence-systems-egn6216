@@ -325,14 +325,18 @@ def e1_rids(arm: str, tag: str | None = None) -> dict[str, list[str]]:
 
 def e3(rid: str) -> dict:
     """E3 on one run's val scores: none / Platt / isotonic, HARP-grouped cross-fitting, PR2 checks."""
+    _, d = load_run(rid)
+    return {"run_id": rid} | e3_scores(d.label.to_numpy(), d.p.to_numpy().astype(float), d.HARPNUM.to_numpy())
+
+
+def e3_scores(y: np.ndarray, p: np.ndarray, h: np.ndarray) -> dict:
+    """E3 on val scores given as arrays (``e3`` for a run record; the M5 bundle for its CPU scores)."""
     from solarsentinel.models import calibration as cal
 
     ev = m4_cfg()["eval"]
-    _, d = load_run(rid)
-    y, p, h = d.label.to_numpy(), d.p.to_numpy().astype(float), d.HARPNUM.to_numpy()
     natural_pos = int(dataset.load_observations("v2", ("val",), ["label"]).label.sum())
     w = cal.prevalence_weights(y, natural_pos, ev["val_negatives_total"])
-    out = {"run_id": rid, "n": len(y), "n_pos": int(y.sum()), "weights": {"positive": float(w[y == 1][0]), "negative": float(w[y == 0][0])},
+    out = {"n": len(y), "n_pos": int(y.sum()), "weights": {"positive": float(w[y == 1][0]), "negative": float(w[y == 0][0])},
            "methods": {}, "p_cal": {}}
     for meth in ["none", "platt", "isotonic"]:
         q = cal.cross_fit(meth, p, y, h, w, folds=ev["calibration_folds"], seed=ev["bootstrap_seed"])
