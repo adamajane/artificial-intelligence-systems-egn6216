@@ -1,0 +1,58 @@
+# Alert rules = the triggers of the plan-8 signal table. The replay driver computes S1-S4 in replay time and exports
+# solarsentinel_signal_firing{signal=...} (1 = outside the expected range); S5 is also computed from the scorer itself.
+groups:
+  - name: solarsentinel
+    rules:
+      - alert: S1_DataStale
+        expr: max by (run_id) (solarsentinel_signal_firing{signal="S1_data_age_h"}) == 1
+        labels: { severity: page, signal: S1, links: "PR5 R5 T4" }
+        annotations:
+          summary: "Data age over 12 h of replay time: the dashboard shows STALE"
+          response: "STALE banner with last-known values; check the ingest / replay feed"
+      - alert: S2_InputRejects
+        expr: max by (run_id) (solarsentinel_signal_firing{signal="S2_reject_share"}) == 1
+        labels: { severity: ticket, signal: S2, links: "R7 R9 T4" }
+        annotations:
+          summary: "More than 10% of a batch rejected by input validation"
+          response: "Hold alerts with an 'input check' notice; investigate the feed"
+      - alert: S2_BrScaleShift
+        expr: max by (run_id) (solarsentinel_signal_firing{signal="S2_br_ratio_30d"}) == 1
+        labels: { severity: ticket, signal: S2, links: "R7 R9 T4" }
+        annotations:
+          summary: "Median non-zero |Br| (30 d) outside [0.67, 1.5] x the training reference: unit or calibration change?"
+          response: "Hold alerts with an 'input check' notice; compare with HMI calibration notes"
+      - alert: S3_AlertShare
+        expr: max by (run_id) (solarsentinel_signal_firing{signal="S3_alert_share_30d"}) == 1
+        labels: { severity: info, signal: S3, links: "R6 T2" }
+        annotations:
+          summary: "Alert share (30 d) above 2x or below 0.5x the 2015 val share (17.6%)"
+          response: "Review together with S4"
+      - alert: S4_Calibration
+        expr: max by (run_id) (solarsentinel_signal_firing{signal="S4_calibration_ratio_30d"}) == 1
+        labels: { severity: ticket, signal: S4, links: "R6 PR2 T2" }
+        annotations:
+          summary: "Mean p / observed rate (30 d, revealed outcomes) outside [0.5, 2]"
+          response: "Report (replay) / recalibrate (live); ranking mode if PR2 fails"
+      - alert: S5_ScorerErrors
+        expr: |
+          sum(rate(scorer_requests_total{endpoint=~"/v1/.*",code=~"5.."}[2m]))
+            / clamp_min(sum(rate(scorer_requests_total{endpoint=~"/v1/.*"}[2m])), 1e-9) > 0.01
+          or max by (run_id) (solarsentinel_signal_firing{signal="S5_error_share_30d"}) == 1
+        labels: { severity: page, signal: S5, links: "D1 PR3" }
+        annotations:
+          summary: "Scorer 5xx/timeouts over 1% of requests"
+          response: "Inspect scorer logs; restart; the dashboard shows the NO DATA state for unscored regions"
+      - alert: S5_ScorerLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(scorer_request_seconds_bucket{endpoint="/v1/score"}[5m]))) > 0.1
+        for: 1m
+        labels: { severity: ticket, signal: S5, links: "D1 PR3" }
+        annotations:
+          summary: "Scorer p95 latency over 100 ms per region"
+          response: "Inspect load and CPU limits"
+      - alert: ScorerDown
+        expr: up{job="scorer"} == 0
+        for: 15s
+        labels: { severity: page, signal: S5 }
+        annotations:
+          summary: "Scorer not reachable by Prometheus"
+          response: "docker compose ps / logs scorer; restart"

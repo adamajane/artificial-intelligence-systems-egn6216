@@ -1,0 +1,19 @@
+# Nothing private or bulky goes into an image (plan 6.6, 9)
+.env
+.env.*
+**/.env
+.git
+.gitignore
+.venv
+.claude
+data/
+notes/
+experiments/
+v1/
+**/__pycache__
+**/*.pyc
+*.ipynb
+.ipynb_checkpoints
+docs/
+tests/
+deploy/secrets/

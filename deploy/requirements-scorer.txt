@@ -1,0 +1,19 @@
+# Scorer image runtime (plan 6.6). torch/torchvision come from the PyTorch CPU index (no CUDA libraries); the rest
+# from PyPI. Versions match uv.lock, the environment the bundle was built and tested in.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1+cpu ; platform_machine == "x86_64"
+torch==2.14.1 ; platform_machine == "aarch64"
+torchvision==0.29.1+cpu ; platform_machine == "x86_64"
+torchvision==0.29.1 ; platform_machine == "aarch64"
+timm==1.0.30
+numpy==2.5.3
+fastapi==0.165.0
+starlette==1.10.0
+uvicorn==0.54.0
+python-multipart==0.0.34
+pydantic==2.14.4
+prometheus-client==0.26.0
+astropy==8.0.1
+scikit-image==0.26.0
+scipy==1.18.1
+pyyaml==6.0.3

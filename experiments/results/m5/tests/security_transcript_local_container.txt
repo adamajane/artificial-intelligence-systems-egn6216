@@ -1,0 +1,73 @@
+# SolarSentinel scorer: input controls (2026-11-21T04:29:08Z, http://127.0.0.1:8001)
+
+### health
+$ curl http://127.0.0.1:8001/healthz
+HTTP 200
+{"status":"ok","bundle_id":"0101774eb973e9cfa7f297796fe4927f0d8f723058c6a6a6fa74905aa81fe452","bundle_short":"0101774eb973","threshold":0.05261639668634724,"mode":"probability","clip_c":980.5,"input_size":[128,128]}
+
+### valid cutout -> 200 with bundle ID
+$ curl -F cutout=@valid.npy --form-string meta={"harpnum": 394, "t_rec": "2011.03.06_05:48:00_TAI", "quality": 0, "source": "test"} http://127.0.0.1:8001/v1/score
+HTTP 200
+{"p":0.5086511204271469,"p_raw":0.9672484397888184,"alert":true,"mode":"probability","bundle_id":"0101774eb973e9cfa7f297796fe4927f0d8f723058c6a6a6fa74905aa81fe452","threshold":0.05261639668634724,"request_id":"c67906fc98d647398a3a1b576b6e8a77","latency_ms":18.919,"harpnum":394,"t_rec":"2011.03.06_05:48:00_TAI","t_slot":null,"source":"test","quality":0,"input_checks":{"median_abs_br_nonzero":41.0,"zero_share":0.4375}}
+
+### oversized body (640 KB > 256 KB limit) -> 413
+$ curl -F cutout=@oversized.npy --form-string meta={"harpnum": 394, "t_rec": "2011.03.06_05:48:00_TAI", "quality": 0, "source": "test"} http://127.0.0.1:8001/v1/score
+HTTP 413
+{"error": "payload_too_large", "reason": "body_over_limit", "limit_bytes": 262144, "detail": "request body over 262144 bytes"}
+
+### wrong shape (64x64) -> 422
+$ curl -F cutout=@wrong_shape.npy --form-string meta={"harpnum": 394, "t_rec": "2011.03.06_05:48:00_TAI", "quality": 0, "source": "test"} http://127.0.0.1:8001/v1/score
+HTTP 422
+{"error":"rejected","reason":"bad_shape","detail":"shape (64, 64); (128, 128) expected"}
+
+### NaN-only array -> 422
+$ curl -F cutout=@nan_only.npy --form-string meta={"harpnum": 394, "t_rec": "2011.03.06_05:48:00_TAI", "quality": 0, "source": "test"} http://127.0.0.1:8001/v1/score
+HTTP 422
+{"error":"rejected","reason":"all_nan","detail":"every pixel is NaN"}
+
+### pickled object in .npy (never unpickled) -> 422
+$ curl -F cutout=@pickled.npy --form-string meta={"harpnum": 394, "t_rec": "2011.03.06_05:48:00_TAI", "quality": 0, "source": "test"} http://127.0.0.1:8001/v1/score
+HTTP 422
+{"error":"rejected","reason":"npy_unreadable","detail":"ValueError"}
+
+### bad metadata (unknown field, bad t_rec) -> 422
+$ curl -F cutout=@valid.npy --form-string meta={"harpnum": 1, "t_rec": "yesterday", "quality": 0, "source": "test", "admin": true} http://127.0.0.1:8001/v1/score
+HTTP 422
+{"error":"rejected","reason":"bad_metadata","detail":"t_rec: Value error, t_rec must look like 2017.09.05_12:00:00_TAI; admin: Extra inputs are not permitted"}
+
+### wrong content type (JSON) -> 415
+$ curl -H content-type: application/json -d {"cutout": [1, 2, 3]} http://127.0.0.1:8001/v1/score
+HTTP 415
+{"error":"bad_request","reason":"unsupported_media_type","detail":"send multipart/form-data with fields 'cutout' and 'meta'"}
+
+### scorer metrics after the demo (rejects by reason)
+$ curl http://127.0.0.1:8001/metrics
+HTTP 200
+scorer_requests_total{code="200",endpoint="/healthz"} 7.0
+scorer_requests_total{code="200",endpoint="/v1/score"} 627.0
+scorer_requests_total{code="413",endpoint="/v1/score"} 1.0
+scorer_requests_total{code="422",endpoint="/v1/score"} 4.0
+scorer_requests_total{code="415",endpoint="/v1/score"} 1.0
+scorer_requests_created{code="200",endpoint="/healthz"} 1.7952353110323093e+09
+scorer_requests_created{code="200",endpoint="/v1/score"} 1.7952353141718106e+09
+scorer_requests_created{code="413",endpoint="/v1/score"} 1.7952353484669113e+09
+scorer_requests_created{code="422",endpoint="/v1/score"} 1.795235348482988e+09
+scorer_requests_created{code="415",endpoint="/v1/score"} 1.7952353485489657e+09
+scorer_rejects_total{reason="body_over_limit"} 1.0
+scorer_rejects_total{reason="bad_shape"} 1.0
+scorer_rejects_total{reason="all_nan"} 1.0
+scorer_rejects_total{reason="npy_unreadable"} 1.0
+scorer_rejects_total{reason="bad_metadata"} 1.0
+scorer_rejects_total{reason="unsupported_media_type"} 1.0
+scorer_rejects_created{reason="body_over_limit"} 1.7952353484669218e+09
+scorer_rejects_created{reason="bad_shape"} 1.7952353484829233e+09
+scorer_rejects_created{reason="all_nan"} 1.795235348500706e+09
+scorer_rejects_created{reason="npy_unreadable"} 1.795235348518166e+09
+scorer_rejects_created{reason="bad_metadata"} 1.795235348533523e+09
+scorer_rejects_created{reason="unsupported_media_type"} 1.7952353485488734e+09
+scorer_request_seconds_created{endpoint="/v1/score"} 1.7952353141718304e+09
+scorer_alerts_total 238.0
+scorer_alerts_created 1.7952353101802921e+09
+scorer_bundle_info{bundle_id="0101774eb973e9cfa7f297796fe4927f0d8f723058c6a6a6fa74905aa81fe452",mode="probability",threshold="0.052616"} 1.0
+
+

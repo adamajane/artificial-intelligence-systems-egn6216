@@ -77,6 +77,7 @@ m4: # Milestone 4 (docs/3-milestone4-plan.md)
 m5: # Milestones 5-6 (docs/4-milestone5-plan.md). The v2 block in data.yaml is not touched (its hash is in the M4 manifest).
   results_dir: experiments/results/m5
   replay_prefix: processed/v2/replay # targets.parquet, cutouts/ (shards + index.parquet), manifest.json (plan 4.2)
+  coverage_prefix: processed/v2/m5 # coverage_<split>.parquet: assessed / not_assessed / no_data per slot (plan 4.3)
   bundle: # plan 2: retrain the selected model once with the exact M4 recipe and freeze it
     prefix: models # bucket-relative (data/models/ locally, gitignored); containers fetch it over public HTTPS
     run_id: m5_bundle_resnet18_pad_s42
@@ -87,3 +88,44 @@ m5: # Milestones 5-6 (docs/4-milestone5-plan.md). The v2 block in data.yaml is n
     accept_val_tss: [0.66, 0.72] # plan 2.5, decided before the retrain: M4 0.692 +- 0.014 over 3 seeds, about +-2 sd
     m4_threshold: 0.048 # M4 calibrated threshold (old weights), reported next to the re-picked one
     parity_max_abs_diff: 1.0e-5 # plan 10: API score vs the CPU-path score
+  final_test: # plan 5, pre-registered in docs/4-milestone5-preregistration.md (frozen with that commit; never tuned on replay)
+    bundle_id: 0101774eb973e9cfa7f297796fe4927f0d8f723058c6a6a6fa74905aa81fe452 # sha256 of the bundle file (plan 2.4)
+    bundle_file: models/solarsentinel-resnet18-pad-0101774eb973.pt # bucket-relative
+    replay_targets_sha256: 657e7869ddd8b4234c423c23ee690c39e03411eda058f924643d5bcb0f993d76
+    run_id_prefix: m5_final_test # run ID = <prefix>_<bundle short hash>
+    pr1_min_tss: 0.5 # point estimate at the frozen threshold; plus paired CI vs persistence excluding 0
+    pr2_ratio_range: [0.5, 2.0] # check 1: mean p / observed rate
+    pr2_bins: 5 # check 3: equal-count bins, at most pr2_max_bin_misses misses
+    pr2_max_bin_misses: 1
+    r1_max_val_test_tss_gap: 0.15 # R1 trigger
+    slice_min_positives: 10 # recall / false-alarm share / TSS only for slices with at least this many positives
+    usflux_cuts: [2.342232e+22, 3.853554e+22] # M4 terciles of the 208 val positives: low <= a < mid <= b < high
+    cmd_cuts_deg: [30, 60] # |LON_FWT| 0-30, 30-60
+    thin_aspect: 2.0
+    single_region: { harpnum: 7115, noaa_ar: 12673 } # 40 of the 62 M/X flares in 2017 (PR1 note)
+    climatology_rate_2015: 0.0401 # 208 / 5185, gap-corrected natural val rate (fixed-climatology baseline row)
+    calibration_window_days: 30 # rolling mean p / observed rate (plan 5.4)
+    error_gallery_k: 8
+    bootstrap: { reps: 1000, seed: 0 }
+  monitoring: # plan 8; expected ranges from val (bundle report) or design
+    s1_data_age_h: { expected_max: 6, trigger: 12 }
+    # S2: rolling 30-day median of each cutout's median non-zero |Br|, over the train reference (pad arm, 3,117 cutouts).
+    # Band from val (Claude default, 2026-11-20): val's rolling ratio spans 0.74-1.38, so the plan's [0.8, 1.25] would fire on
+    # 13.7% of normal val windows; [0.67, 1.5] fires on 0% of them and still catches a x2 / x0.5 unit change.
+    s2_input: { max_reject_share: 0.10, train_median_abs_br_g: 24.5703125, window_days: 30, min_regions: 5, br_ratio_range: [0.67, 1.5] }
+    s3_alert_share: { val_share: 0.1761, trigger_factor: 2.0 } # trigger above 2x or below 0.5x of the val share
+    s4_calibration: { window_days: 30, ratio_range: [0.5, 2.0] }
+    s5_scorer: { max_5xx_share: 0.01, p95_ms: 100 }
+  api: # scorer C7a (plan 6.2, 9); limits are checked before anything reaches the model
+    max_body_bytes: { /v1/score: 262144, /v1/score/fits: 16777216, default: 16384 } # 128x128 float32 .npy = 65,664 B; largest SHARP Br FITS on disk 10.3 MB
+    max_abs_br_g: 10000 # physical sanity bound on |Br| (Gauss); a unit/scale shift below it is S2's job, not a reject
+    sources: [replay, dev, test, walkthrough, live]
+    max_noaa_ars_chars: 64
+  dashboard: # plan 6.5, 12
+    primary_slot: "2017-09-05T12:00:00Z" # walkthrough scenario: AR 12673 before its X9.3 flare
+    stale_data_age_h: 30 # ?scenario=stale shows data this much older than the clock (S1 trigger is 12 h)
+  deploy: # plan 6.6: containers fetch over public HTTPS; these pins (in git) anchor every sha256 check
+    bundle_card_sha256: 305afe8cf2058bc34acaf45ddd54e8f9d39d2059757c626b2a895c0c4cc84076
+    v2_manifest_sha256: 10816699b251c80f94479a133e0d83f0d8b66e0e48da64459d9b07924ddf580a # unchanged since M4
+    m5_manifest_sha256: f1918b17c6f565dceaddccc27051d5c69f514bc2fd2cfca974d57486c1fbee2a # processed/v2/m5 (coverage, outcomes)
+    replay_manifest_sha256: ffdf4352acd7f0e207233f3b62e11221c9beaed749184bdb6c907c0721cb73dc # processed/v2/replay (cutouts 5,101 + index, targets, inputs_check), built 2026-11-21

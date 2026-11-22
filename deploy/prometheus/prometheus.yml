@@ -1,0 +1,11 @@
+# Prometheus for SolarSentinel (plan 8): scrapes the scorer (requests, rejects, latency) and the replay driver's
+# monitor (signals S1-S5 in replay time). Alert rules in rules.yml; firing alerts show on :9090/alerts and in Grafana.
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+rule_files: [rules.yml]
+scrape_configs:
+  - job_name: scorer
+    static_configs: [{ targets: ["scorer:8000"] }]
+  - job_name: replay
+    static_configs: [{ targets: ["replay:9101"] }]

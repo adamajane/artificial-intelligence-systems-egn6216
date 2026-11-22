@@ -39,6 +39,7 @@ import pyarrow.parquet as pq
 from solarsentinel import storage
 from solarsentinel.config import config_path, load_config, load_experiments, prefix
 from solarsentinel.data import v2
+from solarsentinel.data.cutout_rules import pad_square, to_cutout_padded  # noqa: F401 (re-export)
 from solarsentinel.data.cutouts import fits_rel, read_br, to_cutout
 from solarsentinel.models.dataset import load_observations
 
@@ -58,22 +59,7 @@ def stretch_prefix() -> str:
     return f"{load_experiments()['m4']['prefix']}/cutouts_stretch"
 
 
-def pad_square(img: np.ndarray, value: float) -> tuple[np.ndarray, float]:
-    """Centered zero-pad to max(ny, nx) square; returns (square, pad_fraction)."""
-    ny, nx = img.shape
-    n = max(ny, nx)
-    out = np.full((n, n), value, dtype=img.dtype)
-    y0, x0 = (n - ny) // 2, (n - nx) // 2
-    out[y0 : y0 + ny, x0 : x0 + nx] = img
-    return out, 1.0 - (ny * nx) / (n * n)
-
-
-def to_cutout_padded(img: np.ndarray) -> tuple[np.ndarray, float, float]:
-    """(padded 128x128 cutout, nan_fraction of the original, pad_fraction)."""
-    nan_fraction = float(np.isnan(img).mean())
-    sq, pad_fraction = pad_square(img, float(load_config()["v2"]["cutouts"]["pad_value"]))
-    out, _ = to_cutout(sq)  # NaN fill + resize + dtype exactly as v1
-    return out, nan_fraction, pad_fraction
+# pad_square and to_cutout_padded live in cutout_rules (shared with the scorer's FITS endpoint); re-exported here.
 
 
 def rows_on_disk() -> pd.DataFrame:
@@ -138,8 +124,10 @@ def build(rows: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
 def write_manifest() -> dict:
     """processed/v2/manifest.json: sha256 and size per file under processed/v2, row counts, config hashes, code commit."""
     root = storage.local_path(v2.v2_prefix())
+    own = {"replay", "m5"}  # Milestone 5 folders keep their own manifests; the M4 manifest stays reproducible
     files = {}
-    for f in sorted(p for p in root.rglob("*") if p.is_file() and p.name != "manifest.json" and not p.name.startswith(".")):
+    for f in sorted(p for p in root.rglob("*") if p.is_file() and p.name != "manifest.json" and not p.name.startswith(".")
+                    and p.relative_to(root).parts[0] not in own):
         e = {"sha256": storage.sha256(f), "bytes": f.stat().st_size}
         if f.suffix == ".npy":
             e["rows"] = int(np.load(f, mmap_mode="r").shape[0])

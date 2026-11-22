@@ -1,0 +1,13 @@
+# gitleaks 8.30.1, 2026-11-21T04:30:06Z
+## git history (all commits)
+11:30PM INF 26 commits scanned.
+11:30PM INF scanned ~6169152 bytes (6.17 MB) in 15.1s
+11:30PM INF no leaks found
+## image solarsentinel-scorer:local (sha256:8bbc0f4e4788): /app
+11:30PM INF scanned ~391976 bytes (391.98 KB) in 40ms
+11:30PM INF no leaks found
+files under /app:       39; .env present: no
+## image solarsentinel-dashboard:local (sha256:6963bf8e55d4): /app
+11:30PM INF scanned ~402817 bytes (402.82 KB) in 36.6ms
+11:30PM INF no leaks found
+files under /app:       40; .env present: no

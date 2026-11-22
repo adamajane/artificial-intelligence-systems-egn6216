@@ -1,0 +1,66 @@
+%% SolarSentinel Architecture v2 (Milestones 5-6). Rendered to architecture_v2.png by deploy/tools/render_mermaid.py.
+flowchart TB
+  classDef ext fill:#f3f4f6,stroke:#4b5563,color:#111827
+  classDef store fill:#eaf2fb,stroke:#1f4e79,color:#111827
+  classDef comp fill:#ffffff,stroke:#111827,color:#111827
+  classDef mon fill:#fff4d6,stroke:#8a5a00,color:#3d2800
+  classDef fail fill:#fdecec,stroke:#9b1c1c,color:#3b0a0a
+
+  subgraph EXT["External services"]
+    JSOC["JSOC / SDO-HMI<br/>SHARP keywords + Br FITS"]:::ext
+    NOAA["NOAA NCEI / SWPC<br/>GOES flare lists"]:::ext
+    GCS[("GCS bucket, public read<br/>us-east1: raw, processed/v2,<br/>models/ (bundle)")]:::store
+    HF["Hugging Face Hub<br/>timm ResNet-18 weights<br/>(training only)"]:::ext
+  end
+
+  subgraph LAPTOP["Laptop (on demand): C1-C6"]
+    PIPE["C1-C4 data pipeline<br/>goes, sharp_keywords, observations,<br/>v2 gap, cutouts_v2, coverage"]:::comp
+    TRAIN["C5-C6 training + freeze<br/>models.bundle (mps)<br/>retrain = M4 model, bit-identical"]:::comp
+    EVAL["Evaluation<br/>models.final_test<br/>(replay labels behind the<br/>pre-registration gate)"]:::comp
+  end
+
+  subgraph STACK["docker compose (laptop, all ports on 127.0.0.1) = system of record"]
+    SCORER["C7a Scorer API (FastAPI, CPU)<br/>/v1/score, /v1/score/fits,<br/>/healthz, /metrics<br/>size limit 413, validation 422"]:::comp
+    DRIVER["C7b Replay driver<br/>+ C9 tracker / monitor<br/>slot by slot, replay time"]:::comp
+    DB[("C8 Prediction store (SQLite, volume)<br/>runs, predictions, coverage, slots,<br/>outcomes, metrics, feedback")]:::store
+    DASH["C10 Dashboard (Streamlit)<br/>Overview, Region, Tracking, About<br/>STALE / NO DATA / NOT ASSESSED"]:::comp
+    PROM["C11 Prometheus<br/>rules.yml: S1-S5 alerts"]:::mon
+    GRAF["C11 Grafana<br/>anonymous read-only"]:::mon
+  end
+
+  subgraph CLOUD["Cloud Run us-east1 (Should)"]
+    CRD["Dashboard, public read-only<br/>final-test store baked in"]:::comp
+    CRS["Scorer, IAM sign-in only<br/>max 1 instance"]:::comp
+  end
+
+  USER(["Operator / grader<br/>browser"]):::ext
+
+  JSOC -- "export (1 pending, 1,400-char record sets)" --> PIPE
+  NOAA --> PIPE
+  HF --> TRAIN
+  PIPE -- "processed/v2 + coverage + manifests" --> GCS
+  PIPE --> TRAIN
+  TRAIN -- "bundle .pt + card (sha256 = bundle ID)" --> GCS
+  GCS -- "HTTPS at build: bundle (sha256 pinned in git)" --> SCORER
+  GCS -- "HTTPS at first start: cutouts, coverage (sha256)" --> DRIVER
+  DRIVER -- "POST one cutout per region" --> SCORER
+  DRIVER -- "one transaction per slot" --> DB
+  DB -- "read" --> DASH
+  DB -- "store file" --> EVAL
+  SCORER -- "/metrics" --> PROM
+  DRIVER -- ":9101 signals" --> PROM
+  PROM --> GRAF
+  DASH --> USER
+  GRAF --> USER
+  GCS -. "images built with linux/amd64" .-> CRD
+  GCS -.-> CRS
+  CRD --> USER
+
+  F1["Failure: JSOC file host down<br/>(seen 2026-11-20) -> export waits,<br/>fallback: test on the cutouts that finished"]:::fail
+  F2["Failure: scorer down -> regions NO DATA,<br/>data age grows -> STALE (S1, S5)"]:::fail
+  F3["Failure: feed stalls -> S1 > 12 h -> STALE"]:::fail
+  F4["Failure: unit / calibration change -> S2 |Br| ratio"]:::fail
+  JSOC -.- F1
+  SCORER -.- F2
+  DRIVER -.- F3
+  DRIVER -.- F4

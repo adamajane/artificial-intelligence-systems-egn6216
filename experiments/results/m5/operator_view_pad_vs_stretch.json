@@ -1,0 +1,129 @@
+{
+ "source": "M4 run records m4_E2_resnet18_{pad,stretch}_s{42,0,1} (val 2015, 626 cases), each at its own max-TSS val threshold; m4.task_view (natural prevalence)",
+ "per_run": [
+  {
+   "arm": "pad",
+   "seed": 42,
+   "run_id": "m4_E2_resnet18_pad_s42",
+   "threshold_raw": 0.31906312704086304,
+   "tss": 0.6930207949944792,
+   "pr_auc_corrected": 0.3437102634369237,
+   "alerts_per_day": 2.76,
+   "hit_share_of_alerts": 0.192,
+   "flares": 68,
+   "flares_missed": 6,
+   "missed_flares_per_month": 0.55
+  },
+  {
+   "arm": "pad",
+   "seed": 0,
+   "run_id": "m4_E2_resnet18_pad_s0",
+   "threshold_raw": 0.22195489704608917,
+   "tss": 0.6764814133235185,
+   "pr_auc_corrected": 0.33825532251121354,
+   "alerts_per_day": 3.69,
+   "hit_share_of_alerts": 0.151,
+   "flares": 68,
+   "flares_missed": 4,
+   "missed_flares_per_month": 0.37
+  },
+  {
+   "arm": "pad",
+   "seed": 1,
+   "run_id": "m4_E2_resnet18_pad_s1",
+   "threshold_raw": 0.42768925428390503,
+   "tss": 0.7050515274199485,
+   "pr_auc_corrected": 0.36633862538242357,
+   "alerts_per_day": 2.81,
+   "hit_share_of_alerts": 0.192,
+   "flares": 68,
+   "flares_missed": 6,
+   "missed_flares_per_month": 0.55
+  },
+  {
+   "arm": "stretch",
+   "seed": 42,
+   "run_id": "m4_E2_resnet18_stretch_s42",
+   "threshold_raw": 0.40009427070617676,
+   "tss": 0.6905134339344865,
+   "pr_auc_corrected": 0.46047312791783734,
+   "alerts_per_day": 2.42,
+   "hit_share_of_alerts": 0.212,
+   "flares": 68,
+   "flares_missed": 9,
+   "missed_flares_per_month": 0.83
+  },
+  {
+   "arm": "stretch",
+   "seed": 0,
+   "run_id": "m4_E2_resnet18_stretch_s0",
+   "threshold_raw": 0.4035676121711731,
+   "tss": 0.7097442031652559,
+   "pr_auc_corrected": 0.48230116167797843,
+   "alerts_per_day": 2.44,
+   "hit_share_of_alerts": 0.216,
+   "flares": 68,
+   "flares_missed": 8,
+   "missed_flares_per_month": 0.74
+  },
+  {
+   "arm": "stretch",
+   "seed": 1,
+   "run_id": "m4_E2_resnet18_stretch_s1",
+   "threshold_raw": 0.6024656891822815,
+   "tss": 0.7143448656606551,
+   "pr_auc_corrected": 0.45414686665298576,
+   "alerts_per_day": 1.76,
+   "hit_share_of_alerts": 0.285,
+   "flares": 68,
+   "flares_missed": 10,
+   "missed_flares_per_month": 0.92
+  }
+ ],
+ "mean_sd": {
+  "pad": {
+   "tss": [
+    0.692,
+    0.014
+   ],
+   "pr_auc_corrected": [
+    0.349,
+    0.015
+   ],
+   "alerts_per_day": [
+    3.087,
+    0.523
+   ],
+   "hit_share_of_alerts": [
+    0.178,
+    0.024
+   ],
+   "missed_flares_per_month": [
+    0.49,
+    0.104
+   ]
+  },
+  "stretch": {
+   "tss": [
+    0.705,
+    0.013
+   ],
+   "pr_auc_corrected": [
+    0.466,
+    0.015
+   ],
+   "alerts_per_day": [
+    2.207,
+    0.387
+   ],
+   "hit_share_of_alerts": [
+    0.238,
+    0.041
+   ],
+   "missed_flares_per_month": [
+    0.83,
+    0.09
+   ]
+  }
+ }
+}

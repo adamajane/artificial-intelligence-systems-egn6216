@@ -17,6 +17,43 @@ uv sync
 `requirements.txt` is exported from `uv.lock`
 (`uv export --format requirements-txt --no-hashes -o requirements.txt`) for tools that need pip.
 
+## Run it (the deployed system)
+
+Needs only [Docker](https://docs.docker.com/get-docker/) with Compose v2. No GPU, no credentials, no local data: the
+model bundle and the data come from the public bucket over HTTPS, and every file is checked against a sha256 pinned in
+`configs/experiments.yaml`.
+
+```bash
+git clone https://github.com/adamajane/artificial-intelligence-systems-egn6216.git
+cd artificial-intelligence-systems-egn6216
+docker compose up --build -d
+```
+
+Then open (all ports are bound to 127.0.0.1 only):
+
+| What | URL |
+| --- | --- |
+| Dashboard (Streamlit) | http://127.0.0.1:8501 |
+| Monitoring (Grafana, read-only) | http://127.0.0.1:3000 |
+| Alerts (Prometheus) | http://127.0.0.1:9090/alerts |
+| Scorer API health | http://127.0.0.1:8000/healthz |
+
+What runs: `scorer` (the frozen ResNet-18 bundle behind FastAPI, CPU), `replay` (fetches the data, replays it slot by
+slot through the scorer into a SQLite store, and exports the monitoring signals), `dashboard`, `prometheus`, `grafana`.
+Each start of `replay` is a new run in the store. Settings (environment variables or an untracked `.env`):
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `FETCH_SETS`, `REPLAY_SPLIT` | `dev`, `val` | which data set to fetch and replay |
+| `SLOT_SECONDS` | `0` | wall seconds per 6-h slot (`2` for a watchable replay) |
+| `REPLAY_EXTRA` | `--drop-uncut` | extra driver flags, e.g. fault switches `--stall-after`, `--scale-br 2.0 --scale-from ...`, `--skip-slots`, `--corrupt-every N` |
+| `SOLARSENTINEL_MODE` | from the final test | `probability` or `ranking` |
+| `GRAFANA_ADMIN_PASSWORD` | unset | without it Grafana has no login at all (anonymous read-only) |
+
+Stop with `docker compose down` (add `-v` to delete the store and the fetched data). Without Docker, the same parts
+run with uv: `uv run uvicorn solarsentinel.serve.api:app`, `uv run python -m solarsentinel.serve.driver --help`,
+`uv run streamlit run src/solarsentinel/serve/dashboard.py`.
+
 ## Run the notebook
 
 `playground.ipynb` is a first look at the dataset: provenance, size, dtypes, example rows, example cutouts,

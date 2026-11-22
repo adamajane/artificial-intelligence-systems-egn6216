@@ -1,0 +1,542 @@
+{
+ "source": "m5_bundle_resnet18_pad_s42 val scores (626 cases; negatives weighted to the natural 4,977), m4.task_view rules",
+ "bundle_id": "0101774eb973e9cfa7f297796fe4927f0d8f723058c6a6a6fa74905aa81fe452",
+ "default_threshold": 0.05261639668634724,
+ "operating_points": [
+  {
+   "threshold": 0.01,
+   "alerts_per_day": 6.97,
+   "hit_share_of_alerts": 0.085,
+   "missed_flares_per_month": 0.0,
+   "recall_snapshots": 0.9471153846153846
+  },
+  {
+   "threshold": 0.015,
+   "alerts_per_day": 5.69,
+   "hit_share_of_alerts": 0.101,
+   "missed_flares_per_month": 0.09,
+   "recall_snapshots": 0.9134615384615384
+  },
+  {
+   "threshold": 0.02,
+   "alerts_per_day": 4.78,
+   "hit_share_of_alerts": 0.118,
+   "missed_flares_per_month": 0.09,
+   "recall_snapshots": 0.8990384615384616
+  },
+  {
+   "threshold": 0.025,
+   "alerts_per_day": 4.3,
+   "hit_share_of_alerts": 0.129,
+   "missed_flares_per_month": 0.28,
+   "recall_snapshots": 0.8798076923076923
+  },
+  {
+   "threshold": 0.03,
+   "alerts_per_day": 3.62,
+   "hit_share_of_alerts": 0.153,
+   "missed_flares_per_month": 0.28,
+   "recall_snapshots": 0.8798076923076923
+  },
+  {
+   "threshold": 0.035,
+   "alerts_per_day": 3.36,
+   "hit_share_of_alerts": 0.163,
+   "missed_flares_per_month": 0.37,
+   "recall_snapshots": 0.8701923076923077
+  },
+  {
+   "threshold": 0.04,
+   "alerts_per_day": 3.28,
+   "hit_share_of_alerts": 0.164,
+   "missed_flares_per_month": 0.55,
+   "recall_snapshots": 0.8557692307692307
+  },
+  {
+   "threshold": 0.045,
+   "alerts_per_day": 3.16,
+   "hit_share_of_alerts": 0.168,
+   "missed_flares_per_month": 0.55,
+   "recall_snapshots": 0.8461538461538461
+  },
+  {
+   "threshold": 0.05,
+   "alerts_per_day": 2.87,
+   "hit_share_of_alerts": 0.184,
+   "missed_flares_per_month": 0.55,
+   "recall_snapshots": 0.8413461538461539
+  },
+  {
+   "threshold": 0.05262,
+   "alerts_per_day": 2.76,
+   "hit_share_of_alerts": 0.191,
+   "missed_flares_per_month": 0.55,
+   "recall_snapshots": 0.8365384615384616
+  },
+  {
+   "threshold": 0.055,
+   "alerts_per_day": 2.67,
+   "hit_share_of_alerts": 0.191,
+   "missed_flares_per_month": 0.64,
+   "recall_snapshots": 0.8125
+  },
+  {
+   "threshold": 0.06,
+   "alerts_per_day": 2.56,
+   "hit_share_of_alerts": 0.198,
+   "missed_flares_per_month": 0.64,
+   "recall_snapshots": 0.8076923076923077
+  },
+  {
+   "threshold": 0.065,
+   "alerts_per_day": 2.37,
+   "hit_share_of_alerts": 0.21,
+   "missed_flares_per_month": 0.64,
+   "recall_snapshots": 0.7932692307692307
+  },
+  {
+   "threshold": 0.07,
+   "alerts_per_day": 2.21,
+   "hit_share_of_alerts": 0.219,
+   "missed_flares_per_month": 0.74,
+   "recall_snapshots": 0.7692307692307693
+  },
+  {
+   "threshold": 0.075,
+   "alerts_per_day": 2.05,
+   "hit_share_of_alerts": 0.227,
+   "missed_flares_per_month": 0.92,
+   "recall_snapshots": 0.7403846153846154
+  },
+  {
+   "threshold": 0.08,
+   "alerts_per_day": 1.97,
+   "hit_share_of_alerts": 0.232,
+   "missed_flares_per_month": 1.01,
+   "recall_snapshots": 0.7259615384615384
+  },
+  {
+   "threshold": 0.085,
+   "alerts_per_day": 1.89,
+   "hit_share_of_alerts": 0.24,
+   "missed_flares_per_month": 1.01,
+   "recall_snapshots": 0.7211538461538461
+  },
+  {
+   "threshold": 0.09,
+   "alerts_per_day": 1.86,
+   "hit_share_of_alerts": 0.243,
+   "missed_flares_per_month": 1.01,
+   "recall_snapshots": 0.7163461538461539
+  },
+  {
+   "threshold": 0.095,
+   "alerts_per_day": 1.78,
+   "hit_share_of_alerts": 0.25,
+   "missed_flares_per_month": 1.2,
+   "recall_snapshots": 0.7067307692307693
+  },
+  {
+   "threshold": 0.1,
+   "alerts_per_day": 1.74,
+   "hit_share_of_alerts": 0.254,
+   "missed_flares_per_month": 1.2,
+   "recall_snapshots": 0.7019230769230769
+  },
+  {
+   "threshold": 0.11,
+   "alerts_per_day": 1.64,
+   "hit_share_of_alerts": 0.254,
+   "missed_flares_per_month": 1.38,
+   "recall_snapshots": 0.6634615384615384
+  },
+  {
+   "threshold": 0.12,
+   "alerts_per_day": 1.52,
+   "hit_share_of_alerts": 0.265,
+   "missed_flares_per_month": 1.47,
+   "recall_snapshots": 0.6394230769230769
+  },
+  {
+   "threshold": 0.13,
+   "alerts_per_day": 1.43,
+   "hit_share_of_alerts": 0.269,
+   "missed_flares_per_month": 1.47,
+   "recall_snapshots": 0.6105769230769231
+  },
+  {
+   "threshold": 0.14,
+   "alerts_per_day": 1.3,
+   "hit_share_of_alerts": 0.278,
+   "missed_flares_per_month": 1.47,
+   "recall_snapshots": 0.5721153846153846
+  },
+  {
+   "threshold": 0.15,
+   "alerts_per_day": 1.25,
+   "hit_share_of_alerts": 0.279,
+   "missed_flares_per_month": 1.47,
+   "recall_snapshots": 0.5528846153846154
+  },
+  {
+   "threshold": 0.16,
+   "alerts_per_day": 1.05,
+   "hit_share_of_alerts": 0.316,
+   "missed_flares_per_month": 1.66,
+   "recall_snapshots": 0.5288461538461539
+  },
+  {
+   "threshold": 0.17,
+   "alerts_per_day": 1.03,
+   "hit_share_of_alerts": 0.302,
+   "missed_flares_per_month": 1.93,
+   "recall_snapshots": 0.4951923076923077
+  },
+  {
+   "threshold": 0.18,
+   "alerts_per_day": 0.97,
+   "hit_share_of_alerts": 0.296,
+   "missed_flares_per_month": 2.3,
+   "recall_snapshots": 0.4567307692307692
+  },
+  {
+   "threshold": 0.19,
+   "alerts_per_day": 0.89,
+   "hit_share_of_alerts": 0.315,
+   "missed_flares_per_month": 2.3,
+   "recall_snapshots": 0.44711538461538464
+  },
+  {
+   "threshold": 0.2,
+   "alerts_per_day": 0.85,
+   "hit_share_of_alerts": 0.318,
+   "missed_flares_per_month": 2.49,
+   "recall_snapshots": 0.42788461538461536
+  },
+  {
+   "threshold": 0.21,
+   "alerts_per_day": 0.77,
+   "hit_share_of_alerts": 0.343,
+   "missed_flares_per_month": 2.58,
+   "recall_snapshots": 0.4182692307692308
+  },
+  {
+   "threshold": 0.22,
+   "alerts_per_day": 0.76,
+   "hit_share_of_alerts": 0.338,
+   "missed_flares_per_month": 2.76,
+   "recall_snapshots": 0.40865384615384615
+  },
+  {
+   "threshold": 0.23,
+   "alerts_per_day": 0.76,
+   "hit_share_of_alerts": 0.335,
+   "missed_flares_per_month": 2.76,
+   "recall_snapshots": 0.40384615384615385
+  },
+  {
+   "threshold": 0.24,
+   "alerts_per_day": 0.75,
+   "hit_share_of_alerts": 0.327,
+   "missed_flares_per_month": 2.76,
+   "recall_snapshots": 0.3894230769230769
+  },
+  {
+   "threshold": 0.25,
+   "alerts_per_day": 0.7,
+   "hit_share_of_alerts": 0.335,
+   "missed_flares_per_month": 2.76,
+   "recall_snapshots": 0.375
+  },
+  {
+   "threshold": 0.26,
+   "alerts_per_day": 0.66,
+   "hit_share_of_alerts": 0.341,
+   "missed_flares_per_month": 2.95,
+   "recall_snapshots": 0.3557692307692308
+  },
+  {
+   "threshold": 0.27,
+   "alerts_per_day": 0.61,
+   "hit_share_of_alerts": 0.345,
+   "missed_flares_per_month": 3.13,
+   "recall_snapshots": 0.3317307692307692
+  },
+  {
+   "threshold": 0.28,
+   "alerts_per_day": 0.55,
+   "hit_share_of_alerts": 0.346,
+   "missed_flares_per_month": 3.22,
+   "recall_snapshots": 0.30288461538461536
+  },
+  {
+   "threshold": 0.29,
+   "alerts_per_day": 0.48,
+   "hit_share_of_alerts": 0.398,
+   "missed_flares_per_month": 3.22,
+   "recall_snapshots": 0.30288461538461536
+  },
+  {
+   "threshold": 0.3,
+   "alerts_per_day": 0.43,
+   "hit_share_of_alerts": 0.41,
+   "missed_flares_per_month": 3.41,
+   "recall_snapshots": 0.27884615384615385
+  },
+  {
+   "threshold": 0.31,
+   "alerts_per_day": 0.39,
+   "hit_share_of_alerts": 0.444,
+   "missed_flares_per_month": 3.41,
+   "recall_snapshots": 0.27403846153846156
+  },
+  {
+   "threshold": 0.32,
+   "alerts_per_day": 0.38,
+   "hit_share_of_alerts": 0.43,
+   "missed_flares_per_month": 3.59,
+   "recall_snapshots": 0.25961538461538464
+  },
+  {
+   "threshold": 0.33,
+   "alerts_per_day": 0.37,
+   "hit_share_of_alerts": 0.412,
+   "missed_flares_per_month": 3.78,
+   "recall_snapshots": 0.2403846153846154
+  },
+  {
+   "threshold": 0.34,
+   "alerts_per_day": 0.32,
+   "hit_share_of_alerts": 0.436,
+   "missed_flares_per_month": 3.96,
+   "recall_snapshots": 0.22115384615384615
+  },
+  {
+   "threshold": 0.35,
+   "alerts_per_day": 0.31,
+   "hit_share_of_alerts": 0.419,
+   "missed_flares_per_month": 4.14,
+   "recall_snapshots": 0.20673076923076922
+  },
+  {
+   "threshold": 0.36,
+   "alerts_per_day": 0.31,
+   "hit_share_of_alerts": 0.414,
+   "missed_flares_per_month": 4.24,
+   "recall_snapshots": 0.20192307692307693
+  },
+  {
+   "threshold": 0.37,
+   "alerts_per_day": 0.3,
+   "hit_share_of_alerts": 0.396,
+   "missed_flares_per_month": 4.42,
+   "recall_snapshots": 0.1875
+  },
+  {
+   "threshold": 0.38,
+   "alerts_per_day": 0.29,
+   "hit_share_of_alerts": 0.377,
+   "missed_flares_per_month": 4.51,
+   "recall_snapshots": 0.17307692307692307
+  },
+  {
+   "threshold": 0.39,
+   "alerts_per_day": 0.25,
+   "hit_share_of_alerts": 0.424,
+   "missed_flares_per_month": 4.51,
+   "recall_snapshots": 0.16826923076923078
+  },
+  {
+   "threshold": 0.4,
+   "alerts_per_day": 0.24,
+   "hit_share_of_alerts": 0.394,
+   "missed_flares_per_month": 4.79,
+   "recall_snapshots": 0.14903846153846154
+  },
+  {
+   "threshold": 0.41,
+   "alerts_per_day": 0.24,
+   "hit_share_of_alerts": 0.394,
+   "missed_flares_per_month": 4.79,
+   "recall_snapshots": 0.14903846153846154
+  },
+  {
+   "threshold": 0.42,
+   "alerts_per_day": 0.23,
+   "hit_share_of_alerts": 0.386,
+   "missed_flares_per_month": 4.79,
+   "recall_snapshots": 0.14423076923076922
+  },
+  {
+   "threshold": 0.43,
+   "alerts_per_day": 0.23,
+   "hit_share_of_alerts": 0.378,
+   "missed_flares_per_month": 4.88,
+   "recall_snapshots": 0.13942307692307693
+  },
+  {
+   "threshold": 0.44,
+   "alerts_per_day": 0.19,
+   "hit_share_of_alerts": 0.43,
+   "missed_flares_per_month": 5.07,
+   "recall_snapshots": 0.12980769230769232
+  },
+  {
+   "threshold": 0.45,
+   "alerts_per_day": 0.18,
+   "hit_share_of_alerts": 0.412,
+   "missed_flares_per_month": 5.16,
+   "recall_snapshots": 0.1201923076923077
+  },
+  {
+   "threshold": 0.46,
+   "alerts_per_day": 0.15,
+   "hit_share_of_alerts": 0.512,
+   "missed_flares_per_month": 5.16,
+   "recall_snapshots": 0.1201923076923077
+  },
+  {
+   "threshold": 0.47,
+   "alerts_per_day": 0.14,
+   "hit_share_of_alerts": 0.502,
+   "missed_flares_per_month": 5.16,
+   "recall_snapshots": 0.11538461538461539
+  },
+  {
+   "threshold": 0.48,
+   "alerts_per_day": 0.14,
+   "hit_share_of_alerts": 0.491,
+   "missed_flares_per_month": 5.25,
+   "recall_snapshots": 0.11057692307692307
+  },
+  {
+   "threshold": 0.49,
+   "alerts_per_day": 0.14,
+   "hit_share_of_alerts": 0.48,
+   "missed_flares_per_month": 5.34,
+   "recall_snapshots": 0.10576923076923077
+  },
+  {
+   "threshold": 0.5,
+   "alerts_per_day": 0.14,
+   "hit_share_of_alerts": 0.469,
+   "missed_flares_per_month": 5.34,
+   "recall_snapshots": 0.10096153846153846
+  },
+  {
+   "threshold": 0.51,
+   "alerts_per_day": 0.1,
+   "hit_share_of_alerts": 0.627,
+   "missed_flares_per_month": 5.34,
+   "recall_snapshots": 0.09615384615384616
+  },
+  {
+   "threshold": 0.52,
+   "alerts_per_day": 0.1,
+   "hit_share_of_alerts": 0.627,
+   "missed_flares_per_month": 5.34,
+   "recall_snapshots": 0.09615384615384616
+  },
+  {
+   "threshold": 0.53,
+   "alerts_per_day": 0.09,
+   "hit_share_of_alerts": 0.588,
+   "missed_flares_per_month": 5.53,
+   "recall_snapshots": 0.08173076923076923
+  },
+  {
+   "threshold": 0.54,
+   "alerts_per_day": 0.08,
+   "hit_share_of_alerts": 0.573,
+   "missed_flares_per_month": 5.53,
+   "recall_snapshots": 0.07692307692307693
+  },
+  {
+   "threshold": 0.55,
+   "alerts_per_day": 0.05,
+   "hit_share_of_alerts": 1.0,
+   "missed_flares_per_month": 5.62,
+   "recall_snapshots": 0.07211538461538461
+  },
+  {
+   "threshold": 0.56,
+   "alerts_per_day": 0.04,
+   "hit_share_of_alerts": 1.0,
+   "missed_flares_per_month": 5.62,
+   "recall_snapshots": 0.0625
+  },
+  {
+   "threshold": 0.57,
+   "alerts_per_day": 0.04,
+   "hit_share_of_alerts": 1.0,
+   "missed_flares_per_month": 5.62,
+   "recall_snapshots": 0.0625
+  },
+  {
+   "threshold": 0.58,
+   "alerts_per_day": 0.04,
+   "hit_share_of_alerts": 1.0,
+   "missed_flares_per_month": 5.62,
+   "recall_snapshots": 0.0625
+  },
+  {
+   "threshold": 0.59,
+   "alerts_per_day": 0.04,
+   "hit_share_of_alerts": 1.0,
+   "missed_flares_per_month": 5.62,
+   "recall_snapshots": 0.0625
+  },
+  {
+   "threshold": 0.6,
+   "alerts_per_day": 0.04,
+   "hit_share_of_alerts": 1.0,
+   "missed_flares_per_month": 5.62,
+   "recall_snapshots": 0.0625
+  }
+ ],
+ "small_region": {
+  "usflux_max": 2.342232e+22,
+  "n_flaring_snapshots": 70,
+  "caught": 39,
+  "recall": 0.5571428571428572,
+  "other_terciles_recall": 0.9855072463768116
+ },
+ "base_rates": {
+  "train": {
+   "positives": 1086,
+   "observations": 25051,
+   "rate": 0.043351562811863795
+  },
+  "val": {
+   "positives": 208,
+   "observations": 5185,
+   "rate": 0.040115718418514947
+  }
+ },
+ "val_metrics": {
+  "n": 626,
+  "n_pos": 208,
+  "n_harps": 151,
+  "n_flaring_harps": 27,
+  "tp": 175,
+  "fp": 62,
+  "fn": 33,
+  "tn": 356,
+  "pod": 0.8413461538461539,
+  "pofd": 0.14832535885167464,
+  "tss": 0.6930207949944792,
+  "roc_auc": 0.899786069193964,
+  "pr_auc_corrected": 0.3437102634369237,
+  "precision_corrected": 0.1916306022152131,
+  "brier_corrected": 0.03151748709057037,
+  "bss_corrected": 0.18150104482785323,
+  "tss_ci95": [
+   0.5727075935710464,
+   0.7839020840525879
+  ],
+  "roc_auc_ci95": [
+   0.8429712023223559,
+   0.9384506916855144
+  ]
+ }
+}

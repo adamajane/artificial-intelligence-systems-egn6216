@@ -59,12 +59,11 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import requests
-from astropy.io import fits
 from dotenv import find_dotenv, load_dotenv
-from skimage.transform import resize
 
 from solarsentinel import storage
 from solarsentinel.config import load_config, load_experiments, prefix
+from solarsentinel.data.cutout_rules import read_br, to_cutout  # noqa: F401 (re-export)
 
 log = logging.getLogger(__name__)
 
@@ -402,31 +401,7 @@ def fetch(targets: pd.DataFrame, root: str, *, dry_run: bool, stop_at: datetime 
 # ---------------------------------------------------------------- cutouts
 
 
-def read_br(path: Path) -> np.ndarray:
-    """Br image as float32; the shape is checked against the FITS header."""
-    with fits.open(path) as hdul:
-        hdu = next(h for h in hdul if h.data is not None)  # Rice-compressed image in HDU 1
-        img = np.asarray(hdu.data, dtype=np.float32)
-        shape = (int(hdu.header["NAXIS2"]), int(hdu.header["NAXIS1"]))
-    if img.shape != shape:
-        raise ValueError(f"{path.name}: data shape {img.shape} != header shape {shape}")
-    return img
-
-
-def to_cutout(img: np.ndarray) -> tuple[np.ndarray, float]:
-    """(resampled cutout, nan_fraction). NaNs are counted on the original, then filled before resizing."""
-    c = cfg()
-    if np.isinf(img).any():
-        raise ValueError("infinite pixel values")
-    nan = np.isnan(img)
-    nan_fraction = float(nan.mean())
-    if nan.any():
-        img = np.where(nan, np.float32(c["nan_fill"]), img)
-    out = resize(img, tuple(c["size"]), order=c["resample_order"], anti_aliasing=c["anti_aliasing"], preserve_range=True)
-    dtype = np.dtype(c["dtype"])
-    if np.abs(out).max() > np.finfo(dtype).max:
-        raise ValueError(f"values exceed {dtype} range (max |Br| {np.abs(out).max():.0f})")
-    return out.astype(dtype), nan_fraction
+# read_br and to_cutout live in cutout_rules (shared with the scorer's FITS endpoint); re-exported here.
 
 
 def build_shards(targets: pd.DataFrame, root: str, out_prefix: str | None = None) -> tuple[pd.DataFrame, dict]:
