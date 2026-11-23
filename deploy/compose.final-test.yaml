@@ -1,0 +1,17 @@
+# The final test, once (plan 7; pre-registration commit 6c6e68e). Usage:
+#   docker compose -f compose.yaml -f deploy/compose.final-test.yaml up -d --build replay
+# The replay outcome file (labels, revealed by the tracker only after t_slot + 24 h of replay time) comes from the
+# pre-registration gate (final_test.write_outcomes) on the host, mounted read-only.
+services:
+  replay:
+    environment:
+      FETCH_SETS: replay
+      REPLAY_SPLIT: replay
+      REPLAY_RUN_ID: m5_final_test_0101774eb973
+      REPLAY_KIND: final
+      REPLAY_REASON: "final test, run once after the pre-registration (commit 6c6e68e)"
+      REPLAY_OUTCOMES: processed/v2/m5/outcomes_replay.parquet
+      REPLAY_EXTRA: ""
+      SLOT_SECONDS: "0"
+    volumes:
+      - ./data/processed/v2/m5/outcomes_replay.parquet:/app/data/processed/v2/m5/outcomes_replay.parquet:ro

@@ -1,0 +1,58 @@
+# SQLite excerpt, store metrics + slots tables, run m5_demo_monitoring_20261122
+
+## S1 around the injected stall (after 2017-08-20T00:00, 16 slots)
+         replay_time slot_status  data_age_h status
+2017-08-19T12:00:00Z      scored         0.0     ok
+2017-08-19T18:00:00Z      scored         0.0     ok
+2017-08-20T00:00:00Z      scored         0.0     ok
+2017-08-20T06:00:00Z     stalled         6.0     ok
+2017-08-20T12:00:00Z     stalled        12.0     ok
+2017-08-20T18:00:00Z     stalled        18.0 firing
+2017-08-21T00:00:00Z     stalled        24.0 firing
+2017-08-21T06:00:00Z     stalled        30.0 firing
+2017-08-21T12:00:00Z     stalled        36.0 firing
+2017-08-21T18:00:00Z     stalled        42.0 firing
+2017-08-22T00:00:00Z     stalled        48.0 firing
+2017-08-22T06:00:00Z     stalled        54.0 firing
+2017-08-22T12:00:00Z     stalled        60.0 firing
+2017-08-22T18:00:00Z     stalled        66.0 firing
+2017-08-23T00:00:00Z     stalled        72.0 firing
+2017-08-23T06:00:00Z     stalled        78.0 firing
+2017-08-23T12:00:00Z     stalled        84.0 firing
+2017-08-23T18:00:00Z     stalled        90.0 firing
+2017-08-24T00:00:00Z     stalled        96.0 firing
+2017-08-24T06:00:00Z      scored         0.0     ok
+2017-08-24T12:00:00Z      scored         0.0     ok
+
+## S2 |Br| ratio around the injected x2 (from 2017-09-20T00:00)
+         replay_time  br_ratio_30d status     detail
+2017-09-18T00:00:00Z      0.951192     ok {"n": 232}
+2017-09-20T00:00:00Z      0.970906     ok {"n": 236}
+2017-09-22T00:00:00Z      0.988235     ok {"n": 239}
+2017-09-24T00:00:00Z      0.991415     ok {"n": 239}
+2017-09-26T00:00:00Z      1.087599     ok {"n": 240}
+2017-09-28T00:00:00Z      1.134817     ok {"n": 252}
+2017-09-30T00:00:00Z      1.182830     ok {"n": 263}
+2017-10-02T00:00:00Z      1.182830     ok {"n": 261}
+2017-10-04T00:00:00Z      1.224165     ok {"n": 247}
+2017-10-06T00:00:00Z      1.287440     ok {"n": 227}
+2017-10-08T00:00:00Z      1.357075     ok {"n": 196}
+2017-10-10T00:00:00Z      1.407631     ok {"n": 174}
+2017-10-12T00:00:00Z      1.539905 firing {"n": 156}
+2017-10-14T00:00:00Z      1.520509 firing {"n": 136}
+2017-10-15T18:00:00Z      1.622258 firing {"n": 130}
+
+## S2 cold start at the demo window start (no fault injected)
+         replay_time  br_ratio_30d       status    detail
+2017-07-15T00:00:00Z           NaN insufficient  {"n": 2}
+2017-07-16T00:00:00Z      1.804134       firing {"n": 10}
+2017-07-17T00:00:00Z      1.844197       firing {"n": 14}
+2017-07-18T00:00:00Z      1.846741       firing {"n": 15}
+2017-07-19T00:00:00Z      1.846741       firing {"n": 15}
+2017-07-20T00:00:00Z      1.846741       firing {"n": 15}
+2017-07-21T00:00:00Z      1.844197       firing {"n": 18}
+2017-07-22T00:00:00Z      1.779650       firing {"n": 22}
+2017-07-23T00:00:00Z      1.577742       firing {"n": 26}
+2017-07-24T00:00:00Z      1.376789           ok {"n": 30}
+2017-07-25T00:00:00Z      1.281717           ok {"n": 34}
+2017-07-26T00:00:00Z      1.170747           ok {"n": 38}

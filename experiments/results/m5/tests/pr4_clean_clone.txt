@@ -1,0 +1,13 @@
+# PR4: clean clone -> first dashboard page; machine: Apple M2 Pro, Docker 29.9.3, images and build cache removed before start
+00:04:51Z git clone
+commit 6c6e68e
+00:04:53Z docker compose -p ss-pr4 up --build -d
+00:09:58Z compose up returned (307 s)
+00:10:31Z replay run finished (340 s)
+00:10:34Z first dashboard page rendered with data: TOTAL 343 s (target <= 600 s)
+solarsentinel-scorer:local 1.88GB
+solarsentinel-dashboard:local 895MB
+prom/prometheus:latest 364MB
+grafana/grafana:latest 1.87GB
+prom/prometheus:v3.5.0 423MB
+grafana/grafana:12.0.0 846MB

@@ -1,0 +1,61 @@
+{
+ "run": "m5_final_test_0101774eb973",
+ "threshold": 0.05261639668634724,
+ "rows": [
+  {
+   "date": "2016-07-01T00:00:00Z",
+   "known_up_to": "2016-06-30T00:00:00Z",
+   "n_known": 1790,
+   "store": {
+    "caught": "10 of 21",
+    "hit_share": "5%",
+    "tss": "0.36",
+    "brier": "0.0130"
+   },
+   "dashboard": {
+    "caught": "10 of 21",
+    "hit_share": "5%",
+    "tss": "0.36",
+    "brier": "0.0130"
+   },
+   "match": true
+  },
+  {
+   "date": "2017-09-05T12:00:00Z",
+   "known_up_to": "2017-09-04T12:00:00Z",
+   "n_known": 4612,
+   "store": {
+    "caught": "43 of 59",
+    "hit_share": "7%",
+    "tss": "0.60",
+    "brier": "0.0131"
+   },
+   "dashboard": {
+    "caught": "43 of 59",
+    "hit_share": "7%",
+    "tss": "0.60",
+    "brier": "0.0131"
+   },
+   "match": true
+  },
+  {
+   "date": "2017-12-29T00:00:00Z",
+   "known_up_to": "2017-12-28T00:00:00Z",
+   "n_known": 5097,
+   "store": {
+    "caught": "58 of 74",
+    "hit_share": "9%",
+    "tss": "0.66",
+    "brier": "0.0128"
+   },
+   "dashboard": {
+    "caught": "58 of 74",
+    "hit_share": "9%",
+    "tss": "0.66",
+    "brier": "0.0128"
+   },
+   "match": true
+  }
+ ],
+ "all_match": true
+}

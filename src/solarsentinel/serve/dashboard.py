@@ -301,6 +301,7 @@ def slot_tables(S: dict, data_t: pd.Timestamp | None) -> tuple[pd.DataFrame, pd.
         # walkthrough: the alerting regions become NOT ASSESSED (near the limb), so "no alerts" is not "all clear"
         hit = p[p.p >= st.session_state.thr].harpnum
         c.loc[c.harpnum.isin(hit), ["state", "reason"]] = ["not_assessed", "walkthrough_near_limb"]
+        c.loc[c.harpnum.isin(hit), ["lat_fwt", "lon_fwt"]] = np.nan  # no disk position, so the scenario does not contradict itself
         p = p[~p.harpnum.isin(hit)]
     o = obs_params(S["split"])
     p = p.merge(o.rename(columns={"HARPNUM": "harpnum", "T_REC": "t_rec"}), on=["harpnum", "t_rec"], how="left")
@@ -354,7 +355,8 @@ def overview():
     n_ass = len(p)
     parts = [f"<b>{n_ass}</b> region{'s' if n_ass != 1 else ''} assessed", f"<b>{len(alerts)}</b> ▲ ALERT{'S' if len(alerts) != 1 else ''}",
              f"<b>{len(na)}</b> NOT ASSESSED", f"<b>{len(nd)}</b> NO DATA"]
-    summary = ("Last known data: " if age is not None and age > trig else "") + " · ".join(parts)
+    last_known = (age is not None and age > trig) or (cur_status not in OK_STATES and newest < t)
+    summary = ("Last known data: " if last_known else "") + " · ".join(parts)
     if n_ass == 0 and len(na) == 0 and len(nd) == 0:
         msg = (f"{summary}.<br>No NOAA-numbered active region is on the visible disk at this time, so there is nothing to forecast. "
                "This is not the same as a forecast of 'no flare'.")

@@ -1,0 +1,24 @@
+# Deliberate failure test (plan 10), run m5_demo_failure_20261122: replay 2017-09-03..09-08 at 3 s/slot, batch 2017-09-04T18:00Z withheld, scorer stopped mid-run
+23:59:17Z replay 2017-09-08T00:00:00Z: docker compose stop scorer
+23:59:39Z replay 2017-09-08T12:00:00Z: scorer down 20 s; alerts ['S3_AlertShare:firing', 'S5_ScorerErrors:firing', 'ScorerDown:pending']
+23:59:42Z live screenshot at replay 2017-09-08T12:00:00Z: docs/figures/m5/screens/overview_failure_live.png
+23:59:47Z replay 2017-09-08T18:00:00Z: alerts ['S1_DataStale:firing', 'S3_AlertShare:firing', 'S5_ScorerErrors:firing', 'ScorerDown:firing']; docker compose start scorer
+23:59:53Z replay 2017-09-08T18:00:00Z: scorer Up 5 seconds (healthy)
+23:59:59Z run finished; alerts ['S1_DataStale:firing', 'S3_AlertShare:firing', 'S5_ScorerErrors:firing', 'ScorerDown:firing']
+2026-11-22 23:58:37,285 INFO solarsentinel.driver: 2017-09-04T18:00:00Z withheld: 0 scored, 0 rejected, 0 errors; firing ['S2_br_ratio_30d', 'S3_alert_share_30d']
+2026-11-22 23:59:26,613 INFO solarsentinel.driver: 2017-09-08T06:00:00Z failed: 0 scored, 0 rejected, 4 errors; firing ['S3_alert_share_30d', 'S5_error_share_30d']
+2026-11-22 23:59:34,237 INFO solarsentinel.driver: 2017-09-08T12:00:00Z failed: 0 scored, 0 rejected, 3 errors; firing ['S3_alert_share_30d', 'S5_error_share_30d']
+2026-11-22 23:59:41,827 INFO solarsentinel.driver: 2017-09-08T18:00:00Z failed: 0 scored, 0 rejected, 3 errors; firing ['S1_data_age_h', 'S3_alert_share_30d', 'S5_error_share_30d']
+2026-11-22 23:59:44,838 INFO solarsentinel.driver: run m5_demo_failure_20261122 finished: {'scored': 78, 'rejected': 0, 'errors': 10}; null provenance fields 0
+
+# Re-run with correct timing, run m5_demo_failure2_20261122: replay 2017-09-03..09-08 at 3 s/slot, batch 2017-09-04T18:00Z withheld, scorer stopped at replay >= 2017-09-05T06:00Z for about 20 s, then restarted (replay continues: recovery)
+00:00:53Z replay 2017-09-05T06:00:00Z: docker compose stop scorer
+00:01:06Z replay 2017-09-05T12:00:00Z: scorer down; alerts ['S3_AlertShare:firing', 'ScorerDown:pending']
+00:01:09Z live screenshot of what the user saw at replay 2017-09-05T12:00:00Z: docs/figures/m5/screens/overview_failure_live.png
+00:01:12Z replay 2017-09-05T18:00:00Z: alerts ['S3_AlertShare:firing', 'S5_ScorerErrors:firing', 'ScorerDown:pending']; docker compose start scorer
+00:01:18Z replay 2017-09-06T06:00:00Z: scorer Up 5 seconds (healthy)
+00:02:04Z run finished; alerts ['S3_AlertShare:firing', 'S5_ScorerErrors:firing']
+2026-11-23 00:00:47,200 INFO solarsentinel.driver: 2017-09-04T18:00:00Z withheld: 0 scored, 0 rejected, 0 errors; firing ['S2_br_ratio_30d', 'S3_alert_share_30d']
+2026-11-23 00:01:02,527 INFO solarsentinel.driver: 2017-09-05T12:00:00Z failed: 0 scored, 0 rejected, 4 errors; firing ['S3_alert_share_30d', 'S5_error_share_30d']
+2026-11-23 00:01:11,655 INFO solarsentinel.driver: 2017-09-05T18:00:00Z failed: 0 scored, 0 rejected, 4 errors; firing ['S3_alert_share_30d', 'S5_error_share_30d']
+2026-11-23 00:01:52,169 INFO solarsentinel.driver: run m5_demo_failure2_20261122 finished: {'scored': 80, 'rejected': 0, 'errors': 8}; null provenance fields 0

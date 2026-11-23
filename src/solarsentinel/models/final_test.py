@@ -396,7 +396,8 @@ def gallery_figure(g: pd.DataFrame, cutout_prefix: str, out: Path, title: str) -
             cache[r.shard] = np.load(storage.local_path(f"{cutout_prefix}/{r.shard}.npy"), mmap_mode="r")
         img = np.asarray(cache[r.shard][int(r.index)], dtype=np.float32)
         ax.imshow(img, origin="lower", cmap="RdBu_r", vmin=-1000, vmax=1000, interpolation="nearest")
-        ax.set_title(f"{r.why}\nAR {r.NOAA_AR} {str(r.t_slot)[:13]}\np={r.p:.3f} {r.label_class or 'no flare'}", fontsize=6.5)
+        cls = r.label_class if isinstance(r.label_class, str) else "no flare"  # pd.NA for negatives without a flare
+        ax.set_title(f"{r.why}\nAR {r.NOAA_AR} {str(r.t_slot)[:13]}\np={r.p:.3f} {cls}", fontsize=6.5)
     fig.suptitle(f"{title}: largest misses and most confident false alarms (Br, +/-1000 G)", fontsize=8)
     fig.tight_layout()
     out.parent.mkdir(parents=True, exist_ok=True)

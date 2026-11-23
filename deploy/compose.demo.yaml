@@ -1,0 +1,16 @@
+# Replay demos after the final test (plan 8 injected failures, plan 10 deliberate failure). Usage:
+#   DEMO_RUN_ID=... DEMO_EXTRA="--start ... --stall-after ..." SLOT_SECONDS=1 \
+#     docker compose -f compose.yaml -f deploy/compose.demo.yaml up -d replay
+services:
+  replay:
+    environment:
+      FETCH_SETS: replay
+      REPLAY_SPLIT: replay
+      REPLAY_RUN_ID: ${DEMO_RUN_ID:-}
+      REPLAY_KIND: demo
+      REPLAY_REASON: ${DEMO_REASON:-replay demo with injected failures}
+      REPLAY_OUTCOMES: processed/v2/m5/outcomes_replay.parquet
+      REPLAY_EXTRA: ${DEMO_EXTRA:-}
+      SLOT_SECONDS: ${SLOT_SECONDS:-1}
+    volumes:
+      - ./data/processed/v2/m5/outcomes_replay.parquet:/app/data/processed/v2/m5/outcomes_replay.parquet:ro

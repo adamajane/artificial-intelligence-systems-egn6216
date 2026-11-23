@@ -1,0 +1,93 @@
+{
+ "run": "m5_final_test_0101774eb973",
+ "started": "2026-11-22T23:45:48Z",
+ "finished": "2026-11-22T23:47:12Z",
+ "wall_s_incl_final_reveal": 84.0,
+ "slots": 2803,
+ "slot_status": {
+  "scored": 2295,
+  "empty": 437,
+  "disk_no_data": 71
+ },
+ "regions_scored": 5101,
+ "e2e_per_slot_ms_slots_with_regions": {
+  "p50": 31.34,
+  "p95": 72.57,
+  "max": 279.98,
+  "n": 2295
+ },
+ "e2e_per_region_ms": {
+  "p50": 15.72,
+  "p95": 21.15,
+  "max": 72.31,
+  "n": 2295
+ },
+ "request_round_trip_ms": {
+  "p50": 14.31,
+  "p95": 18.88,
+  "max": 186.02,
+  "n": 5101
+ },
+ "throughput": {
+  "slots_per_min": 2002.1,
+  "regions_per_s": 60.7
+ },
+ "signals_final_run": {
+  "S1_data_age_h": {
+   "rows": 2804,
+   "firing": 35,
+   "insufficient": 0,
+   "min": 0.0,
+   "max": 120.0
+  },
+  "S2_br_ratio_30d": {
+   "rows": 2804,
+   "firing": 0,
+   "insufficient": 1,
+   "min": 0.783,
+   "max": 1.384
+  },
+  "S2_quality_nonzero_share": {
+   "rows": 2804,
+   "firing": 0,
+   "insufficient": 509,
+   "min": 0.0,
+   "max": 1.0
+  },
+  "S2_reject_share": {
+   "rows": 2804,
+   "firing": 0,
+   "insufficient": 509,
+   "min": 0.0,
+   "max": 0.0
+  },
+  "S3_alert_share_30d": {
+   "rows": 2804,
+   "firing": 1219,
+   "insufficient": 0,
+   "min": 0.0,
+   "max": 0.55
+  },
+  "S4_calibration_ratio_30d": {
+   "rows": 2804,
+   "firing": 322,
+   "insufficient": 1588,
+   "min": 0.097,
+   "max": 16.001
+  },
+  "S5_error_share_30d": {
+   "rows": 2804,
+   "firing": 0,
+   "insufficient": 0,
+   "min": 0.0,
+   "max": 0.0
+  },
+  "S5_p95_ms_30d": {
+   "rows": 2804,
+   "firing": 3,
+   "insufficient": 0,
+   "min": 13.91,
+   "max": 166.772
+  }
+ }
+}

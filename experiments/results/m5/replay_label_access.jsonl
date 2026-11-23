@@ -1,0 +1,2 @@
+{"time_utc": "2026-11-22T23:38:15Z", "reason": "final test: outcome file for the tracker (revealed in replay time), run m5_final_test_0101774eb973", "preregistration_commit": "6c6e68e8d1e42d4632a313cf9670c71bd24209f0", "on_remote": true, "head": "6c6e68e8d1e42d4632a313cf9670c71bd24209f0", "rows": 5101}
+{"time_utc": "2026-11-22T23:47:29Z", "reason": "final test evaluation (pre-registration 6c6e68e), once", "preregistration_commit": "6c6e68e8d1e42d4632a313cf9670c71bd24209f0", "on_remote": true, "head": "6c6e68e8d1e42d4632a313cf9670c71bd24209f0", "rows": 5101}

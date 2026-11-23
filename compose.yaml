@@ -49,6 +49,7 @@ services:
     environment:
       SOLARSENTINEL_STORE: /app/data/store/solarsentinel.db
       SOLARSENTINEL_MODE: ${SOLARSENTINEL_MODE:-}
+      SOLARSENTINEL_RUN: ${SOLARSENTINEL_RUN:-}
       HOME: /tmp
     volumes: ["ss-data:/app/data"]
     ports: ["127.0.0.1:8501:8501"]
